@@ -1,11 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from './supabaseClient';
+import { AdminDashboard } from './components/AdminDashboard';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<'home' | 'search' | 'library' | 'profile'>('home');
   const [coins, setCoins] = useState<number>(10);
+  const [stories, setStories] = useState<any[]>([]);
+  const [loadingStories, setLoadingStories] = useState<boolean>(true);
+
+  // Fetch stories from Supabase database
+  useEffect(() => {
+    fetchStories();
+  }, []);
+
+  const fetchStories = async () => {
+    try {
+      setLoadingStories(true);
+      const { data, error } = await supabase
+        .from('stories')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      if (data) setStories(data);
+    } catch (err) {
+      console.error('Error fetching stories:', err);
+    } finally {
+      setLoadingStories(false);
+    }
+  };
 
   const watchAdForCoins = () => {
-    // Rewarded Ad Simulation (20 Free Coins)
     setCoins(prev => prev + 20);
     alert('🎉 Ad watched successfully! 20 coins added to your wallet.');
   };
@@ -51,24 +76,37 @@ export function App() {
             </button>
           </div>
 
-          {/* Genres / Stories */}
-          <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide mb-3">Trending Audio Series</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-[#16131c] rounded-xl p-2.5 border border-gray-800">
-              <div className="h-32 rounded-lg bg-gray-800 mb-2 overflow-hidden flex items-center justify-center text-gray-500 text-xs">
-                Cover Art
-              </div>
-              <h4 className="text-xs font-bold truncate">Reborn: Infinite Dungeon</h4>
-              <p className="text-[10px] text-gray-400 mt-0.5">Thriller · 5 eps</p>
-            </div>
-            <div className="bg-[#16131c] rounded-xl p-2.5 border border-gray-800">
-              <div className="h-32 rounded-lg bg-gray-800 mb-2 overflow-hidden flex items-center justify-center text-gray-500 text-xs">
-                Cover Art
-              </div>
-              <h4 className="text-xs font-bold truncate">Dark Void</h4>
-              <p className="text-[10px] text-gray-400 mt-0.5">Dark Fantasy · 3 eps</p>
-            </div>
+          {/* Published Stories from Supabase */}
+          <div className="flex justify-between items-center mb-3">
+            <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">Published Audio Series</h3>
+            <button onClick={fetchStories} className="text-[10px] text-orange-400 underline">Refresh</button>
           </div>
+
+          {loadingStories ? (
+            <p className="text-xs text-gray-400 text-center py-6">Loading stories from database...</p>
+          ) : stories.length === 0 ? (
+            <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 text-center">
+              <p className="text-xs text-gray-400 mb-2">No stories published yet.</p>
+              <button 
+                onClick={() => setActiveTab('profile')}
+                className="text-xs text-orange-500 font-bold underline"
+              >
+                Go to Admin Panel to Publish
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3">
+              {stories.map((story) => (
+                <div key={story.id} className="bg-[#16131c] rounded-xl p-2.5 border border-gray-800">
+                  <div className="h-32 rounded-lg bg-gray-800 mb-2 overflow-hidden flex items-center justify-center text-gray-500 text-xs">
+                    {story.genre || 'Audio'}
+                  </div>
+                  <h4 className="text-xs font-bold truncate">{story.title}</h4>
+                  <p className="text-[10px] text-orange-400 truncate mt-0.5">{story.episode_title}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -91,16 +129,15 @@ export function App() {
       )}
 
       {activeTab === 'profile' && (
-        <div className="p-4">
-          <h2 className="text-lg font-bold text-orange-500 mb-3">Admin & Profile</h2>
-          <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 mb-3">
-            <p className="text-xs text-gray-400">Logged in as Admin</p>
-            <p className="text-sm font-bold text-orange-400">divyadev200722@gmail.com</p>
+        <div className="space-y-4">
+          <div className="p-4">
+            <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 mb-4">
+              <p className="text-xs text-gray-400">Logged in as Admin</p>
+              <p className="text-sm font-bold text-orange-400">divyadev200722@gmail.com</p>
+            </div>
           </div>
-          <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800">
-            <p className="text-xs text-gray-400">Wallet Balance</p>
-            <p className="text-base font-bold text-yellow-400">🟡 {coins} Coins</p>
-          </div>
+          {/* Admin Dashboard Component embedded here */}
+          <AdminDashboard />
         </div>
       )}
 
@@ -139,3 +176,4 @@ export function App() {
   );
 }
 export default App;
+              
