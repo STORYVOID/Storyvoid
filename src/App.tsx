@@ -161,7 +161,7 @@ export function App() {
 
       {/* PROFILE & ADMIN TAB */}
       {activeTab === 'profile' && (
-        <div className="p-4 space-y-4 max-w-md mx-auto">
+        <div className="p-4 space-y-4 max-w-md mx-auto pb-12">
           <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800">
             <p className="text-xs text-gray-400">Logged in as Admin</p>
             <p className="text-sm font-bold text-orange-400">divyadev200722@gmail.com</p>
@@ -237,5 +237,34 @@ export function App() {
                 disabled={publishing}
                 className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs transition-all mt-2 shadow-md"
               >
-                {publishing ? 'Publishing...'
-        
+                {publishing ? 'Publishing...' : 'Publish Episode Now'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-[#121017] border-t border-gray-800 flex justify-around py-3 px-2 z-50">
+        <button onClick={() => setActiveTab('home')} className={`flex flex-col items-center text-xs ${activeTab === 'home' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+          <span>🏠</span>
+          <span className="text-[10px] mt-1">HOME</span>
+        </button>
+        <button onClick={() => setActiveTab('search')} className={`flex flex-col items-center text-xs ${activeTab === 'search' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+          <span>🔍</span>
+          <span className="text-[10px] mt-1">SEARCH</span>
+        </button>
+        <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center text-xs ${activeTab === 'library' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+          <span>📚</span>
+          <span className="text-[10px] mt-1">LIBRARY</span>
+        </button>
+        <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center text-xs ${activeTab === 'profile' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+          <span>👤</span>
+          <span className="text-[10px] mt-1">PROFILE</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default App;
