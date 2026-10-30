@@ -95,7 +95,6 @@ export function App() {
   });
   const uniqueSeriesList = Array.from(uniqueSeriesMap.values());
 
-  // Filter series based on selected genre
   const filteredSeriesList = selectedGenreFilter === 'All' 
     ? uniqueSeriesList 
     : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
@@ -210,7 +209,6 @@ export function App() {
             </div>
           ) : (
             <div>
-              {/* Genre Filter Scrollable Bar */}
               <div className="flex overflow-x-auto space-x-2 pb-2 mb-4 scrollbar-none">
                 {genresList.map((genre, idx) => (
                   <button
@@ -336,7 +334,6 @@ export function App() {
         </div>
       )}
 
-      {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#121017] border-t border-gray-800 flex justify-around py-3 px-2 z-50">
         <button onClick={() => { setActiveTab('home'); setSelectedStoryTitle(null); }} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'home' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
           <span>🏠</span>
@@ -366,4 +363,3 @@ export function App() {
 }
 
 export default App;
-              
