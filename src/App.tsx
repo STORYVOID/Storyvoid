@@ -22,7 +22,7 @@ export function App() {
   const [description, setDescription] = useState('');
   const [publishing, setPublishing] = useState(false);
 
-  const ADMIN_EMAIL = 'storyvoid.admin.gmail.com' || 'storyvoid.admin@gmail.com';
+  const ADMIN_EMAIL = 'storyvoid.admin@gmail.com';
   const ADMIN_PASSWORD = 'VoidAdmin#2026'; // Secret Admin Password
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export function App() {
     const cleanEmail = userEmail.trim().toLowerCase();
 
     // Check if trying to login as admin
-    if (cleanEmail === 'storyvoid.admin@gmail.com') {
+    if (cleanEmail === ADMIN_EMAIL) {
       if (password !== ADMIN_PASSWORD) {
         alert('❌ Incorrect Admin Password! Access Denied.');
         return;
@@ -80,7 +80,7 @@ export function App() {
 
     setPublishing(true);
     try {
-      const { error } = await supabase.from('stories'].insert([
+      const { error } = await supabase.from('stories').insert([
         { 
           title, 
           genre, 
@@ -420,4 +420,4 @@ export function App() {
 }
 
 export default App;
-          
+              
