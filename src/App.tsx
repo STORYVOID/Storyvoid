@@ -8,6 +8,7 @@ export function App() {
   const [stories, setStories] = useState<any[]>([]);
   const [loadingStories, setLoadingStories] = useState<boolean>(true);
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
+  const [selectedGenreFilter, setSelectedGenreFilter] = useState<string>('All');
 
   // Authentication State
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -17,6 +18,8 @@ export function App() {
 
   const ADMIN_EMAIL = 'storyvoid.admin@gmail.com';
   const ADMIN_PASSWORD = 'VoidAdmin#2026';
+
+  const genresList = ['All', 'Fantasy', 'Romance', 'Thriller', 'Horror', 'Mystery', 'Action', 'Drama', 'Sci-Fi', 'Comedy', 'Crime'];
 
   useEffect(() => {
     fetchStories();
@@ -77,20 +80,25 @@ export function App() {
 
   const uniqueSeriesMap = new Map();
   stories.forEach(item => {
-    if (!uniqueSeriesMap.has(item.title)) {
+    if (item.title && !uniqueSeriesMap.has(item.title)) {
       uniqueSeriesMap.set(item.title, {
         title: item.title,
-        genre: item.genre,
+        genre: item.genre || 'Thriller',
         description: item.description,
         poster_url: item.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400',
         episodesCount: 1
       });
-    } else {
+    } else if (item.title) {
       const existing = uniqueSeriesMap.get(item.title);
       existing.episodesCount += 1;
     }
   });
   const uniqueSeriesList = Array.from(uniqueSeriesMap.values());
+
+  // Filter series based on selected genre
+  const filteredSeriesList = selectedGenreFilter === 'All' 
+    ? uniqueSeriesList 
+    : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
 
   if (!isLoggedIn) {
     return (
@@ -147,7 +155,7 @@ export function App() {
       </div>
 
       {activeTab === 'home' && (
-        <div className="p-4">
+        <div className="p-4 space-y-4">
           {selectedStoryTitle ? (
             <div>
               <button 
@@ -202,6 +210,19 @@ export function App() {
             </div>
           ) : (
             <div>
+              {/* Genre Filter Scrollable Bar */}
+              <div className="flex overflow-x-auto space-x-2 pb-2 mb-4 scrollbar-none">
+                {genresList.map((genre, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setSelectedGenreFilter(genre)}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${selectedGenreFilter === genre ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800 hover:text-white'}`}
+                  >
+                    {genre}
+                  </button>
+                ))}
+              </div>
+
               <div className="relative rounded-2xl overflow-hidden mb-6 bg-gradient-to-r from-purple-900 to-gray-900 p-5 border border-gray-800 shadow-lg">
                 <span className="bg-orange-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
                   Featured Series
@@ -230,19 +251,21 @@ export function App() {
               </div>
 
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">All Audio Series</h3>
+                <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">
+                  {selectedGenreFilter === 'All' ? 'All Audio Series' : `${selectedGenreFilter} Series`}
+                </h3>
                 <button onClick={fetchStories} className="text-[10px] text-orange-400 underline cursor-pointer">Refresh</button>
               </div>
 
               {loadingStories ? (
                 <p className="text-xs text-gray-400 text-center py-6">Loading series...</p>
-              ) : uniqueSeriesList.length === 0 ? (
+              ) : filteredSeriesList.length === 0 ? (
                 <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 text-center">
-                  <p className="text-xs text-gray-400 mb-2">No series published yet.</p>
+                  <p className="text-xs text-gray-400 mb-2">No series found in this genre.</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
-                  {uniqueSeriesList.map((series, idx) => (
+                  {filteredSeriesList.map((series: any, idx: number) => (
                     <div 
                       key={idx} 
                       onClick={() => setSelectedStoryTitle(series.title)}
@@ -302,7 +325,7 @@ export function App() {
 
           <div className="bg-[#16131c] p-5 rounded-2xl border border-gray-800 text-center">
             <p className="text-xs text-gray-300 font-semibold mb-1">✨ Welcome to StoryVoid!</p>
-            <p className="text-[11px] text-gray-400">Enjoy listening to serialized audio thrillers.</p>
+            <p className="text-[11px] text-gray-400">Enjoy listening to serialized audio stories.</p>
           </div>
         </div>
       )}
@@ -313,7 +336,7 @@ export function App() {
         </div>
       )}
 
-      {/* Bottom Navigation Bar (Fixed alignment & clean layout) */}
+      {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#121017] border-t border-gray-800 flex justify-around py-3 px-2 z-50">
         <button onClick={() => { setActiveTab('home'); setSelectedStoryTitle(null); }} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'home' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
           <span>🏠</span>
@@ -343,3 +366,4 @@ export function App() {
 }
 
 export default App;
+              
