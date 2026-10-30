@@ -1,10 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = 'https://sqmdpuklhhvymkzcqnc.supabase.co';
-const supabaseAnonKey = 'sb_publishable_Z9C9jEr0kU0uoGhz16iOvg_hEo8q-ps';
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase URL or Anon Key');
-}
+// Apne Supabase project ka URL yahan daal (jaise https://abcdefgh.supabase.co)
+const supabaseUrl = 'YOUR_SUPABASE_URL'; 
+const supabaseAnonKey = 'Sb_publishable_Z9C9jEr0kU0uoGhz16iOvg_hEo8q-ps';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
