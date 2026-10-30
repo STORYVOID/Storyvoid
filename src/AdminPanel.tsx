@@ -7,12 +7,11 @@ interface AdminPanelProps {
 }
 
 export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
-  // Admin Navigation Sub-Tabs ('add-story' | 'manage-stories' | 'add-episode')
   const [adminTab, setAdminTab] = useState<'add-story' | 'manage-stories' | 'add-episode'>('add-story');
 
   // Form 1: New Story Series State
   const [storyTitle, setStoryTitle] = useState('');
-  const [genre, setGenre] = useState('Thriller');
+  const [genre, setGenre] = useState('Fantasy');
   const [description, setDescription] = useState('');
   const [posterUrl, setPosterUrl] = useState('');
   const [savingStory, setSavingStory] = useState(false);
@@ -25,7 +24,8 @@ export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
   const [audioUrl, setAudioUrl] = useState('');
   const [publishingEp, setPublishingEp] = useState(false);
 
-  // Unique series list nikalne ke liye
+  const genresList = ['Fantasy', 'Romance', 'Thriller', 'Horror', 'Mystery', 'Action', 'Drama', 'Sci-Fi', 'Comedy', 'Crime'];
+
   const uniqueSeriesMap = new Map();
   stories.forEach(item => {
     if (item.title && !uniqueSeriesMap.has(item.title)) {
@@ -39,7 +39,6 @@ export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
   });
   const uniqueSeriesList = Array.from(uniqueSeriesMap.values());
 
-  // 1. Create New Story Series
   const handleCreateStory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!storyTitle || !posterUrl) {
@@ -75,7 +74,6 @@ export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
     }
   };
 
-  // 2. Publish Episode
   const handlePublishEpisode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSeriesForEp || !episodeTitle) {
@@ -115,7 +113,6 @@ export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
     }
   };
 
-  // 3. Delete Entire Story Series or Episode
   const handleDeleteItem = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
 
@@ -135,7 +132,6 @@ export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
         🛠️ StoryVoid Admin Command Center
       </h2>
 
-      {/* Admin Sub-Navigation Tabs */}
       <div className="flex bg-[#0f0d13] p-1 rounded-xl border border-gray-800 text-[11px] font-bold justify-around">
         <button 
           onClick={() => setAdminTab('add-story')}
@@ -157,7 +153,6 @@ export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
         </button>
       </div>
 
-      {/* TAB 1: CREATE NEW STORY SERIES WITH POSTER */}
       {adminTab === 'add-story' && (
         <form onSubmit={handleCreateStory} className="space-y-3 bg-[#0f0d13] p-4 rounded-xl border border-gray-800">
           <h3 className="text-xs font-bold text-orange-400 uppercase">Create New Story Series</h3>
@@ -181,11 +176,9 @@ export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
               onChange={e => setGenre(e.target.value)}
               className="w-full bg-[#16131c] border border-gray-800 rounded-xl p-2.5 text-xs text-white outline-none focus:border-orange-500"
             >
-              <option value="Thriller">Thriller</option>
-              <option value="Dark Fantasy">Dark Fantasy</option>
-              <option value="Romance">Romance</option>
-              <option value="Horror">Horror</option>
-              <option value="Comedy">Comedy</option>
+              {genresList.map((g, idx) => (
+                <option key={idx} value={g}>{g}</option>
+              ))}
             </select>
           </div>
 
@@ -221,7 +214,6 @@ export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
         </form>
       )}
 
-      {/* TAB 2: ADD EPISODES TO SELECTED STORY */}
       {adminTab === 'add-episode' && (
         <form onSubmit={handlePublishEpisode} className="space-y-3 bg-[#0f0d13] p-4 rounded-xl border border-gray-800">
           <h3 className="text-xs font-bold text-orange-400 uppercase">Publish Episode to Series</h3>
@@ -299,7 +291,6 @@ export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
         </form>
       )}
 
-      {/* TAB 3: MANAGE / DELETE STORIES & EPISODES */}
       {adminTab === 'manage-stories' && (
         <div className="space-y-2 bg-[#0f0d13] p-4 rounded-xl border border-gray-800 max-h-64 overflow-y-auto">
           <h3 className="text-xs font-bold text-orange-400 uppercase mb-2">Existing Database Entries</h3>
@@ -328,4 +319,4 @@ export function AdminPanel({ stories, fetchStories }: AdminPanelProps) {
 }
 
 export default AdminPanel;
-          
+    
