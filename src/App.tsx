@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from './supabaseClient';
+import { AdminPanel } from './AdminPanel';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'home' | 'search' | 'library' | 'profile'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'search' | 'library' | 'profile' | 'admin'>('home');
   const [coins, setCoins] = useState<number>(30);
   const [stories, setStories] = useState<any[]>([]);
   const [loadingStories, setLoadingStories] = useState<boolean>(true);
-
-  // Selected Story for Detail View
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
 
   // Authentication State
@@ -15,13 +14,6 @@ export function App() {
   const [userEmail, setUserEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
-
-  // Admin Form: Add Episode Setup
-  const [selectedSeries, setSelectedSeries] = useState('');
-  const [episodeTitle, setEpisodeTitle] = useState('');
-  const [coinPrice, setCoinPrice] = useState<number>(0);
-  const [audioUrl, setAudioUrl] = useState('');
-  const [publishing, setPublishing] = useState(false);
 
   const ADMIN_EMAIL = 'storyvoid.admin@gmail.com';
   const ADMIN_PASSWORD = 'VoidAdmin#2026';
@@ -67,44 +59,6 @@ export function App() {
       alert('👤 Logged in as Listener.');
     }
     setIsLoggedIn(true);
-  };
-
-  const handlePublishEpisode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedSeries || !episodeTitle) {
-      alert('Please select a story series and enter episode title!');
-      return;
-    }
-
-    const parentStory = stories.find(s => s.title === selectedSeries);
-
-    setPublishing(true);
-    try {
-      const { error } = await supabase.from('stories').insert([
-        { 
-          title: selectedSeries, 
-          genre: parentStory?.genre || 'Thriller', 
-          description: parentStory?.description || '', 
-          poster_url: parentStory?.poster_url || '',
-          episode_title: episodeTitle, 
-          audio_url: audioUrl,
-          coin_price: coinPrice 
-        },
-      ]);
-
-      if (error) throw error;
-
-      alert('🚀 Episode published successfully!');
-      setEpisodeTitle('');
-      setAudioUrl('');
-      setCoinPrice(0);
-      fetchStories();
-      setActiveTab('home');
-    } catch (err: any) {
-      alert('Error publishing: ' + err.message);
-    } finally {
-      setPublishing(false);
-    }
   };
 
   const watchAdForCoins = () => {
@@ -169,7 +123,7 @@ export function App() {
             </div>
             <button 
               type="submit" 
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-lg mt-2"
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-lg mt-2 cursor-pointer"
             >
               Enter StoryVoid
             </button>
@@ -198,7 +152,7 @@ export function App() {
             <div>
               <button 
                 onClick={() => setSelectedStoryTitle(null)}
-                className="text-xs text-orange-400 font-bold mb-4 flex items-center bg-[#16131c] px-3 py-1.5 rounded-lg border border-gray-800 w-fit"
+                className="text-xs text-orange-400 font-bold mb-4 flex items-center bg-[#16131c] px-3 py-1.5 rounded-lg border border-gray-800 w-fit cursor-pointer"
               >
                 ← Back to Home
               </button>
@@ -235,7 +189,7 @@ export function App() {
                           </div>
                           <button 
                             onClick={() => unlockEpisode(ep.coin_price || 0)}
-                            className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold px-3 py-2 rounded-lg transition-all"
+                            className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold px-3 py-2 rounded-lg transition-all cursor-pointer"
                           >
                             {ep.coin_price > 0 ? `Unlock (${ep.coin_price}C)` : '▶ Play Now'}
                           </button>
@@ -256,7 +210,7 @@ export function App() {
                 <p className="text-xs text-gray-300 mb-4">Episode 1: Dead Air - Tune in if you dare.</p>
                 <button 
                   onClick={() => setSelectedStoryTitle('The Last Broadcast')}
-                  className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-md"
+                  className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-md cursor-pointer"
                 >
                   ▶ Listen Now
                 </button>
@@ -269,7 +223,7 @@ export function App() {
                 </div>
                 <button 
                   onClick={watchAdForCoins}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-md"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-md cursor-pointer"
                 >
                   Watch Ad
                 </button>
@@ -277,7 +231,7 @@ export function App() {
 
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">All Audio Series</h3>
-                <button onClick={fetchStories} className="text-[10px] text-orange-400 underline">Refresh</button>
+                <button onClick={fetchStories} className="text-[10px] text-orange-400 underline cursor-pointer">Refresh</button>
               </div>
 
               {loadingStories ? (
@@ -339,112 +293,53 @@ export function App() {
               <p className="text-xs font-bold text-orange-400">{userEmail}</p>
             </div>
             <button 
-              onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setUserEmail(''); setPassword(''); }} 
-              className="text-[10px] bg-red-900/40 text-red-300 hover:bg-red-900 px-3 py-1.5 rounded-lg border border-red-800 font-bold"
+              onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setUserEmail(''); setPassword(''); setActiveTab('home'); }} 
+              className="text-[10px] bg-red-900/40 text-red-300 hover:bg-red-900 px-3 py-1.5 rounded-lg border border-red-800 font-bold cursor-pointer"
             >
               Logout
             </button>
           </div>
 
-          {isAdmin ? (
-            <div className="bg-[#16131c] p-5 rounded-2xl border border-gray-800 shadow-xl">
-              <h2 className="text-base font-extrabold text-orange-500 mb-4 uppercase tracking-wider">
-                🛠️ Admin Episode Publisher
-              </h2>
-
-              <form onSubmit={handlePublishEpisode} className="space-y-3">
-                <div>
-                  <label className="text-[11px] text-gray-400 block mb-1">Select Story Series</label>
-                  <select 
-                    value={selectedSeries} 
-                    onChange={e => setSelectedSeries(e.target.value)}
-                    className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
-                    required
-                  >
-                    <option value="">-- Choose Series --</option>
-                    {uniqueSeriesList.map((s, i) => (
-                      <option key={i} value={s.title}>{s.title}</option>
-                    ))}
-                    <option value="The Last Broadcast">The Last Broadcast</option>
-                    <option value="Ulti Duniya">Ulti Duniya</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[11px] text-gray-400 block mb-1">Episode Title (e.g. Episode 2: The Signal)</label>
-                  <input 
-                    type="text" 
-                    value={episodeTitle} 
-                    onChange={e => setEpisodeTitle(e.target.value)}
-                    placeholder="Enter episode title" 
-                    className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] text-gray-400 block mb-1">Coin Price (0 for Free)</label>
-                  <input 
-                    type="number" 
-                    value={coinPrice} 
-                    onChange={e => setCoinPrice(Number(e.target.value))}
-                    placeholder="e.g. 15" 
-                    className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
-                    min="0"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] text-gray-400 block mb-1">Audio / Stream URL</label>
-                  <input 
-                    type="text" 
-                    value={audioUrl} 
-                    onChange={e => setAudioUrl(e.target.value)}
-                    placeholder="Paste mp3 or audio link" 
-                    className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
-                  />
-                </div>
-
-                <button 
-                  type="submit" 
-                  disabled={publishing}
-                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs transition-all mt-2 shadow-md"
-                >
-                  {publishing ? 'Publishing...' : 'Publish Episode Now'}
-                </button>
-              </form>
-            </div>
-          ) : (
-            <div className="bg-[#16131c] p-5 rounded-2xl border border-gray-800 text-center">
-              <p className="text-xs text-gray-300 font-semibold mb-1">✨ Welcome to StoryVoid!</p>
-              <p className="text-[11px] text-gray-400">Enjoy listening to serialized audio thrillers.</p>
-            </div>
-          )}
+          <div className="bg-[#16131c] p-5 rounded-2xl border border-gray-800 text-center">
+            <p className="text-xs text-gray-300 font-semibold mb-1">✨ Welcome to StoryVoid!</p>
+            <p className="text-[11px] text-gray-400">Enjoy listening to serialized audio thrillers.</p>
+          </div>
         </div>
       )}
 
-      {/* Bottom Navigation Bar */}
+      {activeTab === 'admin' && isAdmin && (
+        <div className="p-4 pb-12">
+          <AdminPanel stories={stories} fetchStories={fetchStories} />
+        </div>
+      )}
+
+      {/* Bottom Navigation Bar (Fixed alignment & clean layout) */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#121017] border-t border-gray-800 flex justify-around py-3 px-2 z-50">
-        <button onClick={() => { setActiveTab('home'); setSelectedStoryTitle(null); }} className={`flex flex-col items-center text-xs ${activeTab === 'home' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+        <button onClick={() => { setActiveTab('home'); setSelectedStoryTitle(null); }} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'home' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
           <span>🏠</span>
           <span className="text-[10px] mt-1">HOME</span>
         </button>
-        <button onClick={() => setActiveTab('search')} className={`flex flex-col items-center text-xs ${activeTab === 'search' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+        <button onClick={() => setActiveTab('search')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'search' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
           <span>🔍</span>
           <span className="text-[10px] mt-1">SEARCH</span>
         </button>
-        <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center text-xs ${activeTab === 'library' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+        <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'library' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
           <span>📚</span>
           <span className="text-[10px] mt-1">LIBRARY</span>
         </button>
-        <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center text-xs ${activeTab === 'profile' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+        <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'profile' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
           <span>👤</span>
           <span className="text-[10px] mt-1">PROFILE</span>
         </button>
+        {isAdmin && (
+          <button onClick={() => setActiveTab('admin')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'admin' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+            <span>🛠️</span>
+            <span className="text-[10px] mt-1">ADMIN</span>
+          </button>
+        )}
       </div>
     </div>
   );
 }
 
 export default App;
-      
