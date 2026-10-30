@@ -16,16 +16,7 @@ export function App() {
   const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Admin Sub-tabs ('create-story' or 'add-episode')
-  const [adminSubTab, setAdminSubTab] = useState<'create' | 'episode'>('episode');
-
-  // Admin Form 1: Story Series Setup
-  const [newSeriesTitle, setNewSeriesTitle] = useState('');
-  const [newSeriesGenre, setNewSeriesGenre] = useState('Thriller');
-  const [newSeriesPoster, setNewSeriesPoster] = useState('');
-  const [newSeriesDesc, setNewSeriesDesc] = useState('');
-
-  // Admin Form 2: Add Episode Setup
+  // Admin Form: Add Episode Setup
   const [selectedSeries, setSelectedSeries] = useState('');
   const [episodeTitle, setEpisodeTitle] = useState('');
   const [coinPrice, setCoinPrice] = useState<number>(0);
@@ -78,7 +69,6 @@ export function App() {
     setIsLoggedIn(true);
   };
 
-  // Publish Episode to Supabase
   const handlePublishEpisode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSeries || !episodeTitle) {
@@ -86,7 +76,6 @@ export function App() {
       return;
     }
 
-    // Find poster & genre from existing series if available
     const parentStory = stories.find(s => s.title === selectedSeries);
 
     setPublishing(true);
@@ -132,7 +121,6 @@ export function App() {
     alert('🎉 Episode unlocked successfully!');
   };
 
-  // Group stories by Series Title for Unique Cards on Home Screen
   const uniqueSeriesMap = new Map();
   stories.forEach(item => {
     if (!uniqueSeriesMap.has(item.title)) {
@@ -150,7 +138,6 @@ export function App() {
   });
   const uniqueSeriesList = Array.from(uniqueSeriesMap.values());
 
-  // 1. LOGIN GATE
   if (!isLoggedIn) {
     return (
       <div className="bg-[#0f0d13] min-h-screen text-white font-sans flex flex-col items-center justify-center p-6 selection:bg-orange-500">
@@ -194,7 +181,6 @@ export function App() {
 
   return (
     <div className="bg-[#0f0d13] min-h-screen text-white font-sans pb-24 selection:bg-orange-500">
-      {/* Top Header */}
       <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-[#121017]">
         <div>
           <h1 className="text-xl font-extrabold tracking-wider text-orange-500">STORYVOID</h1>
@@ -206,10 +192,8 @@ export function App() {
         </div>
       </div>
 
-      {/* MAIN CONTENT */}
       {activeTab === 'home' && (
         <div className="p-4">
-          {/* DETAIL VIEW IF A STORY IS SELECTED */}
           {selectedStoryTitle ? (
             <div>
               <button 
@@ -263,7 +247,6 @@ export function App() {
               })()}
             </div>
           ) : (
-            // HOME GRID VIEW
             <div>
               <div className="relative rounded-2xl overflow-hidden mb-6 bg-gradient-to-r from-purple-900 to-gray-900 p-5 border border-gray-800 shadow-lg">
                 <span className="bg-orange-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
@@ -348,7 +331,6 @@ export function App() {
         </div>
       )}
 
-      {/* PROFILE & SECURE ADMIN PANEL */}
       {activeTab === 'profile' && (
         <div className="p-4 space-y-4 max-w-md mx-auto pb-12">
           <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 flex justify-between items-center">
@@ -441,7 +423,7 @@ export function App() {
         </div>
       )}
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#121017] border-t border-gray-800 flex justify-around py-3 px-2 z-50">
         <button onClick={() => { setActiveTab('home'); setSelectedStoryTitle(null); }} className={`flex flex-col items-center text-xs ${activeTab === 'home' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
           <span>🏠</span>
@@ -453,4 +435,16 @@ export function App() {
         </button>
         <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center text-xs ${activeTab === 'library' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
           <span>📚</span>
-          <span className="text-[10px] mt-1">LIBRARY</spa
+          <span className="text-[10px] mt-1">LIBRARY</span>
+        </button>
+        <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center text-xs ${activeTab === 'profile' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+          <span>👤</span>
+          <span className="text-[10px] mt-1">PROFILE</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default App;
+      
