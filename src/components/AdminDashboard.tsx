@@ -1,125 +1,124 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 
-export const AdminDashboard: React.FC = () => {
+export function AdminDashboard() {
   const [title, setTitle] = useState('');
+  const [genre, setTheme] = useState('Thriller');
   const [description, setDescription] = useState('');
-  const [genre, setGenre] = useState('');
-  const [author, setAuthor] = useState('');
-  const [coverImage, setCoverImage] = useState('');
+  const [episodeTitle, setEpisodeTitle] = useState('');
+  const [audioUrl, setAudioUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
 
-  // Admin Email Check (Sirf tera email admin access karega)
-  const ADMIN_EMAIL = "divyadev200722@gmail.com"; // Tera email jo profile me tha
-
-  const handleAddStory = async (e: React.FormEvent) => {
+  const handlePublish = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage('');
+    if (!title || !episodeTitle) {
+      alert('Please fill in all required fields!');
+      return;
+    }
 
+    setLoading(true);
     try {
       const { error } = await supabase.from('stories').insert([
-        { title, description, genre, author, cover_image: coverImage }
+        {
+          title,
+          genre,
+          description,
+          episode_title: episodeTitle,
+          audio_url: audioUrl,
+        },
       ]);
 
       if (error) throw error;
-      setMessage('Story successfully added!');
+
+      alert('🚀 Episode published successfully to StoryVoid!');
       setTitle('');
       setDescription('');
-      setGenre('');
-      setAuthor('');
-      setCoverImage('');
+      setEpisodeTitle('');
+      setAudioUrl('');
     } catch (err: any) {
-      setMessage('Error: ' + err.message);
+      alert('Error publishing: ' + err.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="pb-24 text-white bg-[#0f0d13] min-h-screen p-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-orange-500">Admin Dashboard</h1>
-        <p className="text-xs text-gray-400">Manage stories, episodes, and app monetization.</p>
-      </div>
+    <div className="p-4 max-w-md mx-auto">
+      <div className="bg-[#16131c] p-5 rounded-2xl border border-gray-800 shadow-xl">
+        <h2 className="text-base font-extrabold text-orange-500 mb-4 uppercase tracking-wider">
+          🛠️ Admin Panel: Publish Story
+        </h2>
 
-      {/* Add Story Form */}
-      <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 mb-6">
-        <h2 className="text-sm font-bold mb-3 text-gray-200">Add New Story</h2>
-        {message && <p className="text-xs mb-3 text-orange-400">{message}</p>}
-        
-        <form onSubmit={handleAddStory} className="space-y-3">
+        <form onSubmit={handlePublish} className="space-y-3">
           <div>
-            <label className="text-[10px] text-gray-400">Story Title</label>
+            <label className="text-[11px] text-gray-400 block mb-1">Story Title</label>
             <input 
               type="text" 
               value={title} 
-              onChange={(e) => setTitle(e.target.value)} 
-              required 
-              className="w-full bg-gray-900 border border-gray-800 rounded-lg p-2 text-xs text-white"
-              placeholder="e.g. The Last Broadcast"
+              onChange={e => setTitle(e.target.value)}
+              placeholder="e.g. The Last Broadcast" 
+              className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
+              required
             />
           </div>
+
           <div>
-            <label className="text-[10px] text-gray-400">Description</label>
-            <textarea 
-              value={description} 
-              onChange={(e) => setDescription(e.target.value)} 
-              className="w-full bg-gray-900 border border-gray-800 rounded-lg p-2 text-xs text-white"
-              placeholder="Story plot..."
-            />
+            <label className="text-[11px] text-gray-400 block mb-1">Genre</label>
+            <select 
+              value={genre} 
+              onChange={e => setTheme(e.target.value)}
+              className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
+            >
+              <option value="Thriller">Thriller</option>
+              <option value="Dark Fantasy">Dark Fantasy</option>
+              <option value="Romance">Romance</option>
+              <option value="Horror">Horror</option>
+            </select>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[10px] text-gray-400">Genre</label>
-              <input 
-                type="text" 
-                value={genre} 
-                onChange={(e) => setGenre(e.target.value)} 
-                className="w-full bg-gray-900 border border-gray-800 rounded-lg p-2 text-xs text-white"
-                placeholder="Thriller / Horror"
-              />
-            </div>
-            <div>
-              <label className="text-[10px] text-gray-400">Author</label>
-              <input 
-                type="text" 
-                value={author} 
-                onChange={(e) => setAuthor(e.target.value)} 
-                className="w-full bg-gray-900 border border-gray-800 rounded-lg p-2 text-xs text-white"
-                placeholder="Author name"
-              />
-            </div>
-          </div>
+
           <div>
-            <label className="text-[10px] text-gray-400">Cover Image URL</label>
+            <label className="text-[11px] text-gray-400 block mb-1">Episode Title</label>
             <input 
               type="text" 
-              value={coverImage} 
-              onChange={(e) => setCoverImage(e.target.value)} 
-              className="w-full bg-gray-900 border border-gray-800 rounded-lg p-2 text-xs text-white"
-              placeholder="https://image-url.com"
+              value={episodeTitle} 
+              onChange={e => setEpisodeTitle(e.target.value)}
+              placeholder="e.g. Episode 1: Dead Air" 
+              className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
+              required
             />
           </div>
+
+          <div>
+            <label className="text-[11px] text-gray-400 block mb-1">Audio / Stream URL</label>
+            <input 
+              type="text" 
+              value={audioUrl} 
+              onChange={e => setAudioUrl(e.target.value)}
+              placeholder="Paste mp3 or audio link" 
+              className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
+            />
+          </div>
+
+          <div>
+            <label className="text-[11px] text-gray-400 block mb-1">Description</label>
+            <textarea 
+              value={description} 
+              onChange={e => setDescription(e.target.value)}
+              placeholder="Short summary of the story..." 
+              className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white h-20"
+            />
+          </div>
+
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg text-xs"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs transition-all mt-2 shadow-md"
           >
-            {loading ? 'Adding...' : 'Publish Story'}
+            {loading ? 'Publishing...' : 'Publish Episode Now'}
           </button>
         </form>
       </div>
-
-      {/* Rewarded Ads & Coin System Info */}
-      <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800">
-        <h2 className="text-sm font-bold mb-2 text-yellow-400">🟡 Free Reward System (Ad Monetization)</h2>
-        <p className="text-xs text-gray-300 leading-relaxed">
-          Users will be able to watch up to 5 rewarded ads per day via AdMob / Rewarded SDKs and receive 20 free credits upon completion to unlock premium thriller episodes.
-        </p>
-      </div>
     </div>
   );
-};
-    
+}
+export default AdminDashboard;
