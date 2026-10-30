@@ -7,6 +7,10 @@ export function App() {
   const [stories, setStories] = useState<any[]>([]);
   const [loadingStories, setLoadingStories] = useState<boolean>(true);
 
+  // User & Admin Login State
+  const [userEmail, setUserEmail] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   // Admin form state
   const [title, setTitle] = useState('');
   const [genre, setGenre] = useState('Thriller');
@@ -14,6 +18,8 @@ export function App() {
   const [episodeTitle, setEpisodeTitle] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
   const [publishing, setPublishing] = useState(false);
+
+  const ADMIN_EMAIL = 'storyvoid.admin@gmail.com';
 
   useEffect(() => {
     fetchStories();
@@ -33,6 +39,20 @@ export function App() {
       console.error('Error fetching stories:', err);
     } finally {
       setLoadingStories(false);
+    }
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userEmail) {
+      alert('Please enter your email!');
+      return;
+    }
+    setIsLoggedIn(true);
+    if (userEmail.trim().toLowerCase() === ADMIN_EMAIL) {
+      alert('🔓 Welcome Admin! Admin panel unlocked.');
+    } else {
+      alert('👤 Logged in as normal user.');
     }
   };
 
@@ -119,9 +139,6 @@ export function App() {
           ) : stories.length === 0 ? (
             <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 text-center">
               <p className="text-xs text-gray-400 mb-2">No stories published yet.</p>
-              <button onClick={() => setActiveTab('profile')} className="text-xs text-orange-500 font-bold underline">
-                Go to Admin Panel to Publish
-              </button>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
@@ -159,88 +176,131 @@ export function App() {
         </div>
       )}
 
-      {/* PROFILE & ADMIN TAB */}
+      {/* PROFILE & SECURE ADMIN TAB */}
       {activeTab === 'profile' && (
         <div className="p-4 space-y-4 max-w-md mx-auto pb-12">
-          <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800">
-            <p className="text-xs text-gray-400">Logged in as Admin</p>
-            <p className="text-sm font-bold text-orange-400">divyadev200722@gmail.com</p>
-          </div>
-
-          <div className="bg-[#16131c] p-5 rounded-2xl border border-gray-800 shadow-xl">
-            <h2 className="text-base font-extrabold text-orange-500 mb-4 uppercase tracking-wider">
-              🛠️ Admin Panel: Publish Story
-            </h2>
-
-            <form onSubmit={handlePublish} className="space-y-3">
-              <div>
-                <label className="text-[11px] text-gray-400 block mb-1">Story Title</label>
+          {!isLoggedIn ? (
+            <div className="bg-[#16131c] p-5 rounded-2xl border border-gray-800 shadow-xl">
+              <h2 className="text-base font-extrabold text-orange-500 mb-2 uppercase tracking-wider">
+                👤 User Login
+              </h2>
+              <p className="text-xs text-gray-400 mb-4">Enter your email to access your profile.</p>
+              <form onSubmit={handleLogin} className="space-y-3">
                 <input 
-                  type="text" 
-                  value={title} 
-                  onChange={e => setTitle(e.target.value)}
-                  placeholder="e.g. The Last Broadcast" 
+                  type="email" 
+                  value={userEmail} 
+                  onChange={e => setUserEmail(e.target.value)}
+                  placeholder="Enter your email address" 
                   className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
                   required
                 />
-              </div>
-
-              <div>
-                <label className="text-[11px] text-gray-400 block mb-1">Genre</label>
-                <select 
-                  value={genre} 
-                  onChange={e => setGenre(e.target.value)}
-                  className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
+                <button 
+                  type="submit" 
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md"
                 >
-                  <option value="Thriller">Thriller</option>
-                  <option value="Dark Fantasy">Dark Fantasy</option>
-                  <option value="Romance">Romance</option>
-                  <option value="Horror">Horror</option>
-                </select>
+                  Login / Continue
+                </button>
+              </form>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray-400">Logged in as</p>
+                  <p className="text-xs font-bold text-orange-400">{userEmail}</p>
+                </div>
+                <button 
+                  onClick={() => setIsLoggedIn(false)} 
+                  className="text-[10px] bg-gray-800 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-gray-300"
+                >
+                  Logout
+                </button>
               </div>
 
-              <div>
-                <label className="text-[11px] text-gray-400 block mb-1">Episode Title</label>
-                <input 
-                  type="text" 
-                  value={episodeTitle} 
-                  onChange={e => setEpisodeTitle(e.target.value)}
-                  placeholder="e.g. Episode 1: Dead Air" 
-                  className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
-                  required
-                />
-              </div>
+              {/* ADMIN PANEL: Only visible if email matches storyvoid.admin@gmail.com */}
+              {userEmail.trim().toLowerCase() === ADMIN_EMAIL ? (
+                <div className="bg-[#16131c] p-5 rounded-2xl border border-gray-800 shadow-xl">
+                  <h2 className="text-base font-extrabold text-orange-500 mb-4 uppercase tracking-wider">
+                    🛠️ Admin Panel: Publish Story
+                  </h2>
 
-              <div>
-                <label className="text-[11px] text-gray-400 block mb-1">Audio / Stream URL</label>
-                <input 
-                  type="text" 
-                  value={audioUrl} 
-                  onChange={e => setAudioUrl(e.target.value)}
-                  placeholder="Paste mp3 or audio link" 
-                  className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
-                />
-              </div>
+                  <form onSubmit={handlePublish} className="space-y-3">
+                    <div>
+                      <label className="text-[11px] text-gray-400 block mb-1">Story Title</label>
+                      <input 
+                        type="text" 
+                        value={title} 
+                        onChange={e => setTitle(e.target.value)}
+                        placeholder="e.g. The Last Broadcast" 
+                        className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
+                        required
+                      />
+                    </div>
 
-              <div>
-                <label className="text-[11px] text-gray-400 block mb-1">Description</label>
-                <textarea 
-                  value={description} 
-                  onChange={e => setDescription(e.target.value)}
-                  placeholder="Short summary..." 
-                  className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white h-20"
-                />
-              </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 block mb-1">Genre</label>
+                      <select 
+                        value={genre} 
+                        onChange={e => setGenre(e.target.value)}
+                        className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
+                      >
+                        <option value="Thriller">Thriller</option>
+                        <option value="Dark Fantasy">Dark Fantasy</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Horror">Horror</option>
+                      </select>
+                    </div>
 
-              <button 
-                type="submit" 
-                disabled={publishing}
-                className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs transition-all mt-2 shadow-md"
-              >
-                {publishing ? 'Publishing...' : 'Publish Episode Now'}
-              </button>
-            </form>
-          </div>
+                    <div>
+                      <label className="text-[11px] text-gray-400 block mb-1">Episode Title</label>
+                      <input 
+                        type="text" 
+                        value={episodeTitle} 
+                        onChange={e => setEpisodeTitle(e.target.value)}
+                        placeholder="e.g. Episode 1: Dead Air" 
+                        className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-gray-400 block mb-1">Audio / Stream URL</label>
+                      <input 
+                        type="text" 
+                        value={audioUrl} 
+                        onChange={e => setAudioUrl(e.target.value)}
+                        placeholder="Paste mp3 or audio link" 
+                        className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[11px] text-gray-400 block mb-1">Description</label>
+                      <textarea 
+                        value={description} 
+                        onChange={e => setDescription(e.target.value)}
+                        placeholder="Short summary..." 
+                        className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-2.5 text-xs text-white h-20"
+                      />
+                    </div>
+
+                    <button 
+                      type="submit" 
+                      disabled={publishing}
+                      className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs transition-all mt-2 shadow-md"
+                    >
+                      {publishing ? 'Publishing...' : 'Publish Episode Now'}
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="bg-[#16131c] p-5 rounded-2xl border border-gray-800 text-center">
+                  <p className="text-xs text-gray-300 font-semibold mb-1">✨ Welcome to StoryVoid!</p>
+                  <p className="text-[11px] text-gray-400">You are logged in as a regular listener. Enjoy streaming awesome audio thrillers.</p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -268,3 +328,4 @@ export function App() {
 }
 
 export default App;
+    
