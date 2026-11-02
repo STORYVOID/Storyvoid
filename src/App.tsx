@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { AdminPanel } from './AdminPanel';
 
@@ -10,7 +10,12 @@ export function App() {
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
   const [selectedGenreFilter, setSelectedGenreFilter] = useState<string>('All');
 
-  // Authentication State with localStorage for persistence
+  // Currently playing audio state
+  const [currentPlayingEpisode, setCurrentPlayingEpisode] = useState<any>(null);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Authentication State with localStorage
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('storyvoid_logged_in') === 'true';
   });
@@ -80,6 +85,7 @@ export function App() {
     setUserEmail('');
     setPassword('');
     setActiveTab('home');
+    setCurrentPlayingEpisode(null);
     localStorage.removeItem('storyvoid_logged_in');
     localStorage.removeItem('storyvoid_email');
     localStorage.removeItem('storyvoid_is_admin');
@@ -90,13 +96,35 @@ export function App() {
     alert('🎉 Ad watched! +20 coins added.');
   };
 
-  const unlockEpisode = (price: number) => {
-    if (coins < price) {
-      alert('❌ Not enough coins! Watch an ad to earn more.');
-      return;
+  const playEpisode = (ep: any) => {
+    const price = ep.coin_price || 0;
+    
+    // Check if paid and needs coins
+    if (price > 0) {
+      if (coins < price) {
+        alert('❌ Not enough coins! Watch an ad to earn more.');
+        return;
+      }
+      setCoins(prev => prev - price);
     }
-    setCoins(prev => prev - price);
-    alert('🎉 Episode unlocked successfully!');
+
+    setCurrentPlayingEpisode(ep);
+    setIsPlaying(true);
+    if (audioRef.current) {
+      audioRef.current.src = ep.audio_url || '';
+      audioRef.current.play().catch(e => console.log('Audio play error:', e));
+    }
+  };
+
+  const togglePlayPause = () => {
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play();
+      setIsPlaying(true);
+    }
   };
 
   const uniqueSeriesMap = new Map();
@@ -162,7 +190,7 @@ export function App() {
   }
 
   return (
-    <div className="bg-[#0f0d13] min-h-screen text-white font-sans pb-24 selection:bg-orange-500">
+    <div className="bg-[#0f0d13] min-h-screen text-white font-sans pb-36 selection:bg-orange-500">
       <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-[#121017]">
         <div>
           <h1 className="text-xl font-extrabold tracking-wider text-orange-500">STORYVOID</h1>
@@ -173,6 +201,8 @@ export function App() {
           <span className="text-xs font-semibold">{coins} Coins</span>
         </div>
       </div>
+
+      <audio ref={audioRef} onEnded={() => setIsPlaying(false)} />
 
       {activeTab === 'home' && (
         <div className="p-4 space-y-4">
@@ -216,7 +246,7 @@ export function App() {
                             </p>
                           </div>
                           <button 
-                            onClick={() => unlockEpisode(ep.coin_price || 0)}
+                            onClick={() => playEpisode(ep)}
                             className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold px-3 py-2 rounded-lg transition-all cursor-pointer"
                           >
                             {ep.coin_price > 0 ? `Unlock (${ep.coin_price}C)` : '▶ Play Now'}
@@ -240,20 +270,6 @@ export function App() {
                     {genre}
                   </button>
                 ))}
-              </div>
-
-              <div className="relative rounded-2xl overflow-hidden mb-6 bg-gradient-to-r from-purple-900 to-gray-900 p-5 border border-gray-800 shadow-lg">
-                <span className="bg-orange-600 text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-                  Featured Series
-                </span>
-                <h2 className="text-lg font-extrabold mt-3 mb-1">THE LAST BROADCAST</h2>
-                <p className="text-xs text-gray-300 mb-4">Episode 1: Dead Air - Tune in if you dare.</p>
-                <button 
-                  onClick={() => setSelectedStoryTitle('The Last Broadcast')}
-                  className="bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold px-4 py-2.5 rounded-full shadow-md cursor-pointer"
-                >
-                  ▶ Listen Now
-                </button>
               </div>
 
               <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 mb-6 flex justify-between items-center">
@@ -355,6 +371,27 @@ export function App() {
         </div>
       )}
 
+      {/* Persistent Audio Player Floating Bar */}
+      {currentPlayingEpisode && (
+        <div className="fixed bottom-16 left-0 right-0 bg-[#1a1721] border-t border-orange-500/50 p-3 px-4 flex items-center justify-between z-40 shadow-2xl">
+          <div className="flex items-center space-x-3 truncate">
+            <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center text-orange-400 font-bold text-xs">
+              ▶
+            </div>
+            <div className="truncate">
+              <h4 className="text-xs font-bold text-white truncate">{currentPlayingEpisode.episode_title || 'Playing Episode'}</h4>
+              <p className="text-[10px] text-gray-400 truncate">{currentPlayingEpisode.title}</p>
+            </div>
+          </div>
+          <button 
+            onClick={togglePlayPause}
+            className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-2 rounded-xl text-xs cursor-pointer shadow-md"
+          >
+            {isPlaying ? '⏸ Pause' : '▶ Play'}
+          </button>
+        </div>
+      )}
+
       <div className="fixed bottom-0 left-0 right-0 bg-[#121017] border-t border-gray-800 flex justify-around py-3 px-2 z-50">
         <button onClick={() => { setActiveTab('home'); setSelectedStoryTitle(null); }} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'home' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
           <span>🏠</span>
@@ -384,4 +421,4 @@ export function App() {
 }
 
 export default App;
-                
+                   
