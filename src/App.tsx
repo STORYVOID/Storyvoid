@@ -10,11 +10,17 @@ export function App() {
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
   const [selectedGenreFilter, setSelectedGenreFilter] = useState<string>('All');
 
-  // Authentication State
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState('');
+  // Authentication State with localStorage for persistence
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    return localStorage.getItem('storyvoid_logged_in') === 'true';
+  });
+  const [userEmail, setUserEmail] = useState(() => {
+    return localStorage.getItem('storyvoid_email') || '';
+  });
   const [password, setPassword] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(() => {
+    return localStorage.getItem('storyvoid_is_admin') === 'true';
+  });
 
   const ADMIN_EMAIL = 'storyvoid.admin@gmail.com';
   const ADMIN_PASSWORD = 'VoidAdmin#2026';
@@ -56,12 +62,27 @@ export function App() {
         return;
       }
       setIsAdmin(true);
+      localStorage.setItem('storyvoid_is_admin', 'true');
       alert('🔓 Welcome Admin!');
     } else {
       setIsAdmin(false);
+      localStorage.removeItem('storyvoid_is_admin');
       alert('👤 Logged in as Listener.');
     }
     setIsLoggedIn(true);
+    localStorage.setItem('storyvoid_logged_in', 'true');
+    localStorage.setItem('storyvoid_email', cleanEmail);
+  };
+
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    setIsAdmin(false);
+    setUserEmail('');
+    setPassword('');
+    setActiveTab('home');
+    localStorage.removeItem('storyvoid_logged_in');
+    localStorage.removeItem('storyvoid_email');
+    localStorage.removeItem('storyvoid_is_admin');
   };
 
   const watchAdForCoins = () => {
@@ -314,7 +335,7 @@ export function App() {
               <p className="text-xs font-bold text-orange-400">{userEmail}</p>
             </div>
             <button 
-              onClick={() => { setIsLoggedIn(false); setIsAdmin(false); setUserEmail(''); setPassword(''); setActiveTab('home'); }} 
+              onClick={handleLogout} 
               className="text-[10px] bg-red-900/40 text-red-300 hover:bg-red-900 px-3 py-1.5 rounded-lg border border-red-800 font-bold cursor-pointer"
             >
               Logout
@@ -363,3 +384,4 @@ export function App() {
 }
 
 export default App;
+                
