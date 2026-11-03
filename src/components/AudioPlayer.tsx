@@ -47,9 +47,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         <div className="flex items-center space-x-2" onClick={e => e.stopPropagation()}>
           <button 
             onClick={playPrev}
-            className="bg-gray-800 hover:bg-gray-700 text-white font-bold px-2.5 py-1.5 rounded-lg text-[10px] cursor-pointer"
+            className="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-lg text-xs cursor-pointer"
           >
-            ⏮ Prev
+            ⏮
           </button>
           <button 
             onClick={togglePlayPause}
@@ -59,34 +59,34 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           </button>
           <button 
             onClick={playNext}
-            className="bg-gray-800 hover:bg-gray-700 text-white font-bold px-2.5 py-1.5 rounded-lg text-[10px] cursor-pointer"
+            className="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-lg text-xs cursor-pointer"
           >
-            Next ⏭
+            ⏭
           </button>
         </div>
       </div>
 
       {/* Full Screen Expanded Player Panel */}
       {isExpanded && (
-        <div className="fixed inset-0 bg-[#0f0d13] z-50 flex flex-col justify-between p-6 animate-fadeIn">
+        <div className="fixed inset-0 bg-[#0f0d13] z-50 flex flex-col justify-between py-6 px-6">
           {/* Top Header */}
           <div className="flex justify-between items-center">
             <button 
               onClick={() => setIsExpanded(false)}
-              className="text-white text-xl font-bold bg-gray-800/60 p-2 rounded-full cursor-pointer hover:bg-gray-700"
+              className="text-gray-400 hover:text-white text-xl p-2 rounded-full bg-gray-900/60 cursor-pointer"
             >
               ⌄
             </button>
             <div className="text-center">
-              <p className="text-[10px] text-orange-400 font-bold uppercase tracking-wider">Now Playing</p>
+              <span className="text-[10px] tracking-widest text-orange-400 uppercase font-semibold">Now Playing</span>
               <h3 className="text-xs font-bold text-white truncate max-w-[200px]">{currentPlayingEpisode.title}</h3>
             </div>
             <div className="w-8"></div>
           </div>
 
-          {/* Center Poster & Details (Poster size optimized & smaller) */}
+          {/* Center Poster & Details */}
           <div className="flex flex-col items-center justify-center space-y-4 my-auto">
-            <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
+            <div className="w-52 h-52 sm:w-60 sm:h-60 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/80 bg-gray-900">
               <img 
                 src={currentPlayingEpisode.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400'} 
                 alt="Story Poster" 
@@ -94,43 +94,43 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               />
             </div>
             <div className="text-center space-y-1 px-4">
-              <h2 className="text-sm font-black text-white">{currentPlayingEpisode.episode_title}</h2>
+              <h2 className="text-sm font-bold text-white tracking-wide">{currentPlayingEpisode.episode_title}</h2>
               <p className="text-xs text-gray-400">{currentPlayingEpisode.title}</p>
             </div>
           </div>
 
-          {/* Bottom Controls with 10s Skip Buttons */}
-          <div className="space-y-4 pb-6">
-            <div className="flex items-center justify-center space-x-4">
+          {/* Bottom Controls - Aesthetic & Clean */}
+          <div className="space-y-4 pb-4">
+            <div className="flex items-center justify-center space-x-6">
               <button 
                 onClick={() => skipTime(-10)}
-                className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold px-3 py-2 rounded-xl cursor-pointer"
+                className="text-gray-400 hover:text-white text-xs font-medium bg-gray-900/80 border border-gray-800 px-3 py-2 rounded-xl cursor-pointer transition-all"
               >
-                ↺ -10s
+                ↺ 10s
               </button>
               <button 
                 onClick={playPrev}
-                className="text-white hover:text-orange-400 text-xs font-bold px-2 cursor-pointer"
+                className="text-gray-300 hover:text-orange-400 text-sm p-2 cursor-pointer"
               >
-                ⏮ PREV
+                ⏮
               </button>
               <button 
                 onClick={togglePlayPause}
-                className="w-14 h-14 bg-orange-500 hover:bg-orange-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-xl cursor-pointer"
+                className="w-16 h-16 bg-orange-500 hover:bg-orange-600 rounded-full flex items-center justify-center text-white text-2xl shadow-lg cursor-pointer transition-all"
               >
                 {isPlaying ? '⏸' : '▶'}
               </button>
               <button 
                 onClick={playNext}
-                className="text-white hover:text-orange-400 text-xs font-bold px-2 cursor-pointer"
+                className="text-gray-300 hover:text-orange-400 text-sm p-2 cursor-pointer"
               >
-                NEXT ⏭
+                ⏭
               </button>
               <button 
                 onClick={() => skipTime(10)}
-                className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold px-3 py-2 rounded-xl cursor-pointer"
+                className="text-gray-400 hover:text-white text-xs font-medium bg-gray-900/80 border border-gray-800 px-3 py-2 rounded-xl cursor-pointer transition-all"
               >
-                +10s ↻
+                10s ↻
               </button>
             </div>
           </div>
@@ -139,4 +139,4 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     </>
   );
 };
-            
+              
