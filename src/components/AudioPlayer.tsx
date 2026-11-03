@@ -6,6 +6,7 @@ interface AudioPlayerProps {
   togglePlayPause: () => void;
   playNext: () => void;
   playPrev: () => void;
+  audioRef?: React.RefObject<HTMLAudioElement | null>;
 }
 
 export const AudioPlayer: React.FC<AudioPlayerProps> = ({
@@ -14,14 +15,21 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   togglePlayPause,
   playNext,
   playPrev,
+  audioRef,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (!currentPlayingEpisode) return null;
 
+  const skipTime = (seconds: number) => {
+    if (audioRef && audioRef.current) {
+      audioRef.current.currentTime += seconds;
+    }
+  };
+
   return (
     <>
-      {/* Mini Player Bar (Always visible at bottom) */}
+      {/* Mini Player Bar */}
       <div 
         onClick={() => setIsExpanded(true)}
         className="fixed bottom-16 left-0 right-0 bg-[#1a1721] border-t border-orange-500/50 p-3 px-4 z-40 shadow-2xl flex items-center justify-between cursor-pointer"
@@ -76,9 +84,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             <div className="w-8"></div>
           </div>
 
-          {/* Center Poster & Details */}
-          <div className="flex flex-col items-center justify-center space-y-6 my-auto">
-            <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-3xl overflow-hidden shadow-2xl border border-gray-800">
+          {/* Center Poster & Details (Poster size optimized & smaller) */}
+          <div className="flex flex-col items-center justify-center space-y-4 my-auto">
+            <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl overflow-hidden shadow-2xl border border-gray-800">
               <img 
                 src={currentPlayingEpisode.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400'} 
                 alt="Story Poster" 
@@ -86,31 +94,43 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               />
             </div>
             <div className="text-center space-y-1 px-4">
-              <h2 className="text-lg font-black text-white">{currentPlayingEpisode.episode_title}</h2>
+              <h2 className="text-sm font-black text-white">{currentPlayingEpisode.episode_title}</h2>
               <p className="text-xs text-gray-400">{currentPlayingEpisode.title}</p>
             </div>
           </div>
 
-          {/* Bottom Controls */}
-          <div className="space-y-6 pb-6">
-            <div className="flex items-center justify-center space-x-6">
+          {/* Bottom Controls with 10s Skip Buttons */}
+          <div className="space-y-4 pb-6">
+            <div className="flex items-center justify-center space-x-4">
+              <button 
+                onClick={() => skipTime(-10)}
+                className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold px-3 py-2 rounded-xl cursor-pointer"
+              >
+                ↺ -10s
+              </button>
               <button 
                 onClick={playPrev}
-                className="text-white hover:text-orange-400 text-lg font-bold p-3 cursor-pointer"
+                className="text-white hover:text-orange-400 text-xs font-bold px-2 cursor-pointer"
               >
                 ⏮ PREV
               </button>
               <button 
                 onClick={togglePlayPause}
-                className="w-16 h-16 bg-orange-500 hover:bg-orange-600 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-xl cursor-pointer"
+                className="w-14 h-14 bg-orange-500 hover:bg-orange-600 rounded-full flex items-center justify-center text-white text-xl font-bold shadow-xl cursor-pointer"
               >
                 {isPlaying ? '⏸' : '▶'}
               </button>
               <button 
                 onClick={playNext}
-                className="text-white hover:text-orange-400 text-lg font-bold p-3 cursor-pointer"
+                className="text-white hover:text-orange-400 text-xs font-bold px-2 cursor-pointer"
               >
                 NEXT ⏭
+              </button>
+              <button 
+                onClick={() => skipTime(10)}
+                className="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold px-3 py-2 rounded-xl cursor-pointer"
+              >
+                +10s ↻
               </button>
             </div>
           </div>
@@ -119,4 +139,4 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     </>
   );
 };
-          
+            
