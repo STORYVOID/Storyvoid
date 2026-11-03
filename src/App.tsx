@@ -204,13 +204,16 @@ export default function App() {
     ? uniqueSeriesList 
     : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
 
+  // Get Featured Story details
+  const featuredTitle = localStorage.getItem('storyvoid_featured_title');
+  const featuredStoryData = uniqueSeriesList.find((s: any) => s.title === featuredTitle);
+
   if (!isLoggedIn) {
     return <AuthScreen onLogin={handleLogin} />;
   }
 
   return (
     <div className="bg-[#0f0d13] min-h-screen text-white font-sans pb-40 selection:bg-orange-500">
-      {/* Global App Notification Modal */}
       <NotificationModal 
         isOpen={modalConfig.isOpen}
         title={modalConfig.title}
@@ -258,7 +261,31 @@ export default function App() {
                 ))}
               </div>
 
-              <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 mb-6 flex justify-between items-center">
+              {/* Featured / Trending Banner (Controlled from Admin Panel) */}
+              {featuredStoryData && (
+                <div 
+                  onClick={() => setSelectedStoryTitle(featuredStoryData.title)}
+                  className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 bg-[#16131c] p-4 flex gap-4 items-center cursor-pointer shadow-xl group hover:border-orange-500 transition-all"
+                >
+                  <img 
+                    src={featuredStoryData.poster_url} 
+                    alt="Featured Banner" 
+                    className="w-24 h-32 object-cover rounded-xl border border-gray-700 shadow-md group-hover:scale-105 transition-all"
+                  />
+                  <div className="flex-1 space-y-1.5">
+                    <span className="text-[9px] bg-orange-500 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                      🔥 Trending & Featured
+                    </span>
+                    <h3 className="text-sm font-black text-white">{featuredStoryData.title}</h3>
+                    <p className="text-[10px] text-gray-300 line-clamp-2 leading-relaxed">{featuredStoryData.description || 'Listen to this amazing audio series now.'}</p>
+                    <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-1.5 rounded-xl text-[11px] shadow-md transition-all cursor-pointer mt-1">
+                      ✨ Play Now
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 mb-6 flex justify-between items-center shadow-md">
                 <div>
                   <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-wide">🟡 Earn Free Coins</h3>
                   <p className="text-[11px] text-gray-300">Watch a short ad to get +20 coins.</p>
@@ -290,7 +317,7 @@ export default function App() {
                     <div 
                       key={idx} 
                       onClick={() => setSelectedStoryTitle(series.title)}
-                      className="bg-[#16131c] rounded-xl p-2.5 border border-gray-800 cursor-pointer hover:border-orange-500 transition-all"
+                      className="bg-[#16131c] rounded-xl p-2.5 border border-gray-800 cursor-pointer hover:border-orange-500 transition-all shadow-md"
                     >
                       <img 
                         src={series.poster_url} 
@@ -335,7 +362,7 @@ export default function App() {
 
       {activeTab === 'admin' && isAdmin && (
         <div className="p-4 pb-12">
-          <AdminPanel stories={stories} fetchStories={fetchStories} />
+          <AdminPanel stories={stories} fetchStories={fetchStories} setSuccessMessage={(msg) => showAppAlert('Success', msg)} />
         </div>
       )}
 
@@ -374,5 +401,4 @@ export default function App() {
       </div>
     </div>
   );
-  }
-                    
+}
