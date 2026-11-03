@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { AdminPanel } from './AdminPanel';
+import { AuthScreen } from './components/AuthScreen';
+import { AudioPlayer } from './components/AudioPlayer';
+import { EpisodeList } from './components/EpisodeList';
+import { ProfileView } from './components/ProfileView';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'home' | 'search' | 'library' | 'profile' | 'admin'>('home');
@@ -25,7 +29,6 @@ export default function App() {
   const [userEmail, setUserEmail] = useState(() => {
     return localStorage.getItem('storyvoid_email') || '';
   });
-  const [password, setPassword] = useState('');
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('storyvoid_is_admin') === 'true';
   });
@@ -56,16 +59,15 @@ export default function App() {
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!userEmail) {
+  const handleLogin = (email: string, pass: string) => {
+    if (!email) {
       alert('Please enter your email!');
       return;
     }
 
-    const cleanEmail = userEmail.trim().toLowerCase();
+    const cleanEmail = email.trim().toLowerCase();
     if (cleanEmail === ADMIN_EMAIL) {
-      if (password !== ADMIN_PASSWORD) {
+      if (pass !== ADMIN_PASSWORD) {
         alert('❌ Incorrect Admin Password!');
         return;
       }
@@ -77,6 +79,7 @@ export default function App() {
       localStorage.removeItem('storyvoid_is_admin');
       alert('👤 Logged in as Listener.');
     }
+    setUserEmail(cleanEmail);
     setIsLoggedIn(true);
     localStorage.setItem('storyvoid_logged_in', 'true');
     localStorage.setItem('storyvoid_email', cleanEmail);
@@ -86,7 +89,6 @@ export default function App() {
     setIsLoggedIn(false);
     setIsAdmin(false);
     setUserEmail('');
-    setPassword('');
     setActiveTab('home');
     setCurrentPlayingEpisode(null);
     localStorage.removeItem('storyvoid_logged_in');
@@ -179,45 +181,9 @@ export default function App() {
   const filteredSeriesList = selectedGenreFilter === 'All' 
     ? uniqueSeriesList 
     : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
-        if (!isLoggedIn) {
-    return (
-      <div className="bg-[#0f0d13] min-h-screen text-white font-sans flex flex-col items-center justify-center p-6 selection:bg-orange-500">
-        <div className="w-full max-w-sm bg-[#16131c] p-6 rounded-3xl border border-gray-800 shadow-2xl text-center">
-          <h1 className="text-2xl font-black tracking-wider text-orange-500 mb-1">STORYVOID</h1>
-          <p className="text-xs text-gray-400 mb-6">SERIALIZED AUDIO STREAMING</p>
 
-          <form onSubmit={handleLogin} className="space-y-4 text-left">
-            <div>
-              <label className="text-[11px] text-gray-400 block mb-1">Email Address</label>
-              <input 
-                type="email" 
-                value={userEmail} 
-                onChange={e => setUserEmail(e.target.value)}
-                placeholder="Enter your email" 
-                className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-3 text-xs text-white focus:border-orange-500 outline-none"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-[11px] text-gray-400 block mb-1">Password / Admin Key</label>
-              <input 
-                type="password" 
-                value={password} 
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Enter password (Required for Admin)" 
-                className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-3 text-xs text-white focus:border-orange-500 outline-none"
-              />
-            </div>
-            <button 
-              type="submit" 
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-xs transition-all shadow-lg mt-2 cursor-pointer"
-            >
-              Enter StoryVoid
-            </button>
-          </form>
-        </div>
-      </div>
-    );
+  if (!isLoggedIn) {
+    return <AuthScreen onLogin={handleLogin} />;
   }
 
   return (
@@ -238,61 +204,13 @@ export default function App() {
       {activeTab === 'home' && (
         <div className="p-4 space-y-4">
           {selectedStoryTitle ? (
-            <div>
-              <button 
-                onClick={() => setSelectedStoryTitle(null)}
-                className="text-xs text-orange-400 font-bold mb-4 flex items-center bg-[#16131c] px-3 py-1.5 rounded-lg border border-gray-800 w-fit cursor-pointer"
-              >
-                ← Back to Home
-              </button>
-
-              {(() => {
-                const seriesStories = stories.filter(s => s.title === selectedStoryTitle);
-                const firstSeries = seriesStories[0] || {};
-                return (
-                  <div className="space-y-4">
-                    <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 flex gap-4 items-center">
-                      <img 
-                        src={firstSeries.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400'} 
-                        alt="Poster" 
-                        className="w-24 h-32 object-cover rounded-xl border border-gray-700"
-                      />
-                      <div>
-                        <span className="text-[9px] bg-orange-900/60 text-orange-300 px-2 py-0.5 rounded-full font-bold">
-                          {firstSeries.genre || 'Thriller'}
-                        </span>
-                        <h2 className="text-base font-black mt-1 text-white">{firstSeries.title}</h2>
-                        <p className="text-[11px] text-gray-400 mt-1 line-clamp-3">{firstSeries.description || 'An immersive audio series.'}</p>
-                      </div>
-                    </div>
-
-                    <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide mt-6 mb-2">Episodes List</h3>
-                    <div className="space-y-2">
-                      {seriesStories.map((ep, idx) => {
-                        const price = Number(ep.coin_price) || 0;
-                        const isUnlocked = price === 0 || unlockedEpisodes[ep.id];
-                        return (
-                          <div key={ep.id || idx} className="bg-[#16131c] p-3 rounded-xl border border-gray-800 flex justify-between items-center">
-                            <div>
-                              <h4 className="text-xs font-bold text-white">{ep.episode_title || `Episode ${idx + 1}`}</h4>
-                              <p className="text-[10px] text-yellow-400 mt-0.5">
-                                {price > 0 && !isUnlocked ? `🔒 ${price} Coins` : '✨ Unlocked / Free'}
-                              </p>
-                            </div>
-                            <button 
-                              onClick={() => handleEpisodeAction(ep, seriesStories, idx)}
-                              className="bg-orange-500 hover:bg-orange-600 text-white text-[10px] font-bold px-3 py-2 rounded-lg transition-all cursor-pointer"
-                            >
-                              {price > 0 && !isUnlocked ? `Unlock (${price}C)` : '▶ Play'}
-                            </button>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
+            <EpisodeList 
+              selectedStoryTitle={selectedStoryTitle}
+              stories={stories}
+              unlockedEpisodes={unlockedEpisodes}
+              onBack={() => setSelectedStoryTitle(null)}
+              onEpisodeAction={handleEpisodeAction}
+            />
           ) : (
             <div>
               <div className="flex overflow-x-auto space-x-2 pb-2 mb-4 scrollbar-none">
@@ -379,25 +297,7 @@ export default function App() {
       )}
 
       {activeTab === 'profile' && (
-        <div className="p-4 space-y-4 max-w-md mx-auto pb-12">
-          <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 flex justify-between items-center">
-            <div>
-              <p className="text-xs text-gray-400">Logged in as ({isAdmin ? 'Admin' : 'User'})</p>
-              <p className="text-xs font-bold text-orange-400">{userEmail}</p>
-            </div>
-            <button 
-              onClick={handleLogout} 
-              className="text-[10px] bg-red-900/40 text-red-300 hover:bg-red-900 px-3 py-1.5 rounded-lg border border-red-800 font-bold cursor-pointer"
-            >
-              Logout
-            </button>
-          </div>
-
-          <div className="bg-[#16131c] p-5 rounded-2xl border border-gray-800 text-center">
-            <p className="text-xs text-gray-300 font-semibold mb-1">✨ Welcome to StoryVoid!</p>
-            <p className="text-[11px] text-gray-400">Enjoy listening to serialized audio stories.</p>
-          </div>
-        </div>
+        <ProfileView userEmail={userEmail} isAdmin={isAdmin} onLogout={handleLogout} />
       )}
 
       {activeTab === 'admin' && isAdmin && (
@@ -406,44 +306,13 @@ export default function App() {
         </div>
       )}
 
-      {currentPlayingEpisode && (
-        <div className="fixed bottom-16 left-0 right-0 bg-[#1a1721] border-t border-orange-500/50 p-3 px-4 z-40 shadow-2xl space-y-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3 truncate">
-              <div className="w-9 h-9 bg-orange-500/20 rounded-lg flex items-center justify-center text-orange-400 font-bold text-xs">
-                ▶
-              </div>
-              <div className="truncate">
-                <h4 className="text-xs font-bold text-white truncate">{currentPlayingEpisode.episode_title || 'Playing Episode'}</h4>
-                <p className="text-[10px] text-gray-400 truncate">{currentPlayingEpisode.title}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <button 
-                onClick={playPrev}
-                className="bg-gray-800 hover:bg-gray-700 text-white font-bold px-2.5 py-1.5 rounded-lg text-[10px] cursor-pointer"
-                title="Previous Episode"
-              >
-                ⏮ Prev
-              </button>
-              <button 
-                onClick={togglePlayPause}
-                className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-3 py-1.5 rounded-lg text-xs cursor-pointer shadow-md"
-              >
-                {isPlaying ? '⏸ Pause' : '▶ Play'}
-              </button>
-              <button 
-                onClick={playNext}
-                className="bg-gray-800 hover:bg-gray-700 text-white font-bold px-2.5 py-1.5 rounded-lg text-[10px] cursor-pointer"
-                title="Next Episode"
-              >
-                Next ⏭
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <AudioPlayer 
+        currentPlayingEpisode={currentPlayingEpisode}
+        isPlaying={isPlaying}
+        togglePlayPause={togglePlayPause}
+        playNext={playNext}
+        playPrev={playPrev}
+      />
 
       <div className="fixed bottom-0 left-0 right-0 bg-[#121017] border-t border-gray-800 flex justify-around py-3 px-2 z-50">
         <button onClick={() => { setActiveTab('home'); setSelectedStoryTitle(null); }} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'home' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
@@ -471,5 +340,5 @@ export default function App() {
       </div>
     </div>
   );
-                  }
-                  
+}
+  
