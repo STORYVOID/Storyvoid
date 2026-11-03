@@ -14,12 +14,21 @@ export default function App() {
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
   const [selectedGenreFilter, setSelectedGenreFilter] = useState<string>('All');
 
-  // Audio Player & Unlocked Episodes State
+  // Audio Player & Unlocked Episodes State with localStorage persistence
   const [currentPlayingEpisode, setCurrentPlayingEpisode] = useState<any>(null);
   const [currentPlaylist, setCurrentPlaylist] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [unlockedEpisodes, setUnlockedEpisodes] = useState<Record<string, boolean>>({});
+  
+  const [unlockedEpisodes, setUnlockedEpisodes] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('storyvoid_unlocked');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Authentication State with localStorage
@@ -113,9 +122,14 @@ export default function App() {
         alert(`❌ Not enough coins! This episode requires ${price} coins. Watch an ad to earn more.`);
         return;
       }
-      setCoins(prev => prev - price);
-      setUnlockedEpisodes(prev => ({ ...prev, [ep.id]: true }));
-      alert(`🎉 Episode unlocked successfully for ${price} coins!`);
+      const updatedCoins = coins - price;
+      setCoins(updatedCoins);
+      
+      const newUnlocked = { ...unlockedEpisodes, [ep.id]: true };
+      setUnlockedEpisodes(newUnlocked);
+      localStorage.setItem('storyvoid_unlocked', JSON.stringify(newUnlocked));
+
+      alert(`🎉 Episode Unlocked Successfully! Enjoy listening.`);
     }
 
     playAudio(ep);
@@ -340,5 +354,5 @@ export default function App() {
       </div>
     </div>
   );
-}
-  
+  }
+                                                                                                                        
