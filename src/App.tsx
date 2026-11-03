@@ -5,6 +5,7 @@ import { AuthScreen } from './components/AuthScreen';
 import { AudioPlayer } from './components/AudioPlayer';
 import { EpisodeList } from './components/EpisodeList';
 import { ProfileView } from './components/ProfileView';
+import { NotificationModal } from './components/NotificationModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'home' | 'search' | 'library' | 'profile' | 'admin'>('home');
@@ -13,6 +14,18 @@ export default function App() {
   const [loadingStories, setLoadingStories] = useState<boolean>(true);
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
   const [selectedGenreFilter, setSelectedGenreFilter] = useState<string>('All');
+
+  // Custom Notification Modal State
+  const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; title: string; message: string; isSuccess: boolean }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    isSuccess: true,
+  });
+
+  const showAppAlert = (title: string, message: string, isSuccess = true) => {
+    setModalConfig({ isOpen: true, title, message, isSuccess });
+  };
 
   // Audio Player & Unlocked Episodes State with localStorage persistence
   const [currentPlayingEpisode, setCurrentPlayingEpisode] = useState<any>(null);
@@ -45,7 +58,7 @@ export default function App() {
   const ADMIN_EMAIL = 'storyvoid.admin@gmail.com';
   const ADMIN_PASSWORD = 'VoidAdmin#2026';
 
-  const genresList = ['All', 'Fantasy', 'Romance', 'Thriller', 'Horror', 'Mystery', 'Action', 'Drama', 'Sci-Fi', 'Comedy', 'Crime'];
+  const genresList = ['All', 'Fantasy', 'Romance', 'Crime', 'Thriller', 'Horror', 'Mystery', 'Action', 'Drama', 'Sci-Fi', 'Comedy'];
 
   useEffect(() => {
     fetchStories();
@@ -70,21 +83,23 @@ export default function App() {
 
   const handleLogin = (email: string, pass: string) => {
     if (!email) {
-      alert('Please enter your email!');
+      showAppAlert('Error', 'Please enter your email!', false);
       return;
     }
 
     const cleanEmail = email.trim().toLowerCase();
     if (cleanEmail === ADMIN_EMAIL) {
       if (pass !== ADMIN_PASSWORD) {
-        alert('❌ Incorrect Admin Password!');
+        showAppAlert('Access Denied', 'Incorrect Admin Password!', false);
         return;
       }
       setIsAdmin(true);
       localStorage.setItem('storyvoid_is_admin', 'true');
+      showAppAlert('Welcome Admin', '🔓 Logged in as Administrator successfully.');
     } else {
       setIsAdmin(false);
       localStorage.removeItem('storyvoid_is_admin');
+      showAppAlert('Welcome Listener', '👤 Logged in successfully.');
     }
     setUserEmail(cleanEmail);
     setIsLoggedIn(true);
@@ -105,12 +120,12 @@ export default function App() {
 
   const watchAdForCoins = () => {
     setCoins(prev => prev + 20);
-    alert('🎉 Ad watched! +20 coins added.');
+    showAppAlert('Coins Added', '🎉 Ad watched successfully! +20 coins added to your wallet.');
   };
 
   const handleUnlockEpisode = (ep: any, price: number) => {
     if (coins < price) {
-      alert(`❌ Not enough coins!`);
+      showAppAlert('Insufficient Coins', `❌ You need ${price} coins to unlock this episode. Watch an ad to earn more!`, false);
       return false;
     }
     const updatedCoins = coins - price;
@@ -154,7 +169,7 @@ export default function App() {
       const nextEp = currentPlaylist[nextIdx];
       handleEpisodeAction(nextEp, currentPlaylist, nextIdx);
     } else {
-      alert('✨ This is the last episode of the series!');
+      showAppAlert('Playback Info', '✨ This is the last episode of the series!');
     }
   };
 
@@ -164,7 +179,7 @@ export default function App() {
       const prevEp = currentPlaylist[prevIdx];
       handleEpisodeAction(prevEp, currentPlaylist, prevIdx);
     } else {
-      alert('✨ This is the first episode!');
+      showAppAlert('Playback Info', '✨ This is the first episode!');
     }
   };
 
@@ -195,6 +210,15 @@ export default function App() {
 
   return (
     <div className="bg-[#0f0d13] min-h-screen text-white font-sans pb-40 selection:bg-orange-500">
+      {/* Global App Notification Modal */}
+      <NotificationModal 
+        isOpen={modalConfig.isOpen}
+        title={modalConfig.title}
+        message={modalConfig.message}
+        isSuccess={modalConfig.isSuccess}
+        onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
+      />
+
       <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-[#121017]">
         <div>
           <h1 className="text-xl font-extrabold tracking-wider text-orange-500">STORYVOID</h1>
@@ -350,5 +374,5 @@ export default function App() {
       </div>
     </div>
   );
-}
-  
+  }
+                    
