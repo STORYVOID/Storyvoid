@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { AdminPanel } from './AdminPanel';
 
-export function App() {
+export default function App() {
   const [activeTab, setActiveTab] = useState<'home' | 'search' | 'library' | 'profile' | 'admin'>('home');
   const [coins, setCoins] = useState<number>(30);
   const [stories, setStories] = useState<any[]>([]);
@@ -107,18 +107,15 @@ export function App() {
     const isUnlocked = price === 0 || unlockedEpisodes[ep.id] || false;
 
     if (!isUnlocked) {
-      // Needs coins to unlock
       if (coins < price) {
         alert(`❌ Not enough coins! This episode requires ${price} coins. Watch an ad to earn more.`);
         return;
       }
-      // Deduct coins and unlock
       setCoins(prev => prev - price);
       setUnlockedEpisodes(prev => ({ ...prev, [ep.id]: true }));
       alert(`🎉 Episode unlocked successfully for ${price} coins!`);
     }
 
-    // Play the episode
     playAudio(ep);
   };
 
@@ -182,8 +179,7 @@ export function App() {
   const filteredSeriesList = selectedGenreFilter === 'All' 
     ? uniqueSeriesList 
     : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
-
-  if (!isLoggedIn) {
+        if (!isLoggedIn) {
     return (
       <div className="bg-[#0f0d13] min-h-screen text-white font-sans flex flex-col items-center justify-center p-6 selection:bg-orange-500">
         <div className="w-full max-w-sm bg-[#16131c] p-6 rounded-3xl border border-gray-800 shadow-2xl text-center">
@@ -410,7 +406,6 @@ export function App() {
         </div>
       )}
 
-      {/* Persistent Audio Player with Next / Previous Controls */}
       {currentPlayingEpisode && (
         <div className="fixed bottom-16 left-0 right-0 bg-[#1a1721] border-t border-orange-500/50 p-3 px-4 z-40 shadow-2xl space-y-2">
           <div className="flex items-center justify-between">
@@ -424,7 +419,6 @@ export function App() {
               </div>
             </div>
 
-            {/* Playback Controls */}
             <div className="flex items-center space-x-2">
               <button 
                 onClick={playPrev}
@@ -460,7 +454,11 @@ export function App() {
           <span>🔍</span>
           <span className="text-[10px] mt-1">SEARCH</span>
         </button>
-         <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'profile' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+        <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'library' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+          <span>📚</span>
+          <span className="text-[10px] mt-1">LIBRARY</span>
+        </button>
+        <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'profile' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
           <span>👤</span>
           <span className="text-[10px] mt-1">PROFILE</span>
         </button>
@@ -473,4 +471,5 @@ export function App() {
       </div>
     </div>
   );
-}
+                  }
+                  
