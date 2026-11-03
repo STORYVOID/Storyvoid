@@ -15,7 +15,16 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
   onBack,
   onEpisodeAction,
 }) => {
-  const seriesStories = stories.filter(s => s.title === selectedStoryTitle);
+  // Series ke episodes filter karke unhe properly sort kar lo (Episode 1 pehle, phir 2, etc.)
+  const seriesStories = stories
+    .filter(s => s.title === selectedStoryTitle)
+    .sort((a, b) => {
+      // Agar episode titles me number hain toh unke hisab se sort karega
+      const numA = parseInt(a.episode_title?.replace(/[^0-9]/g, '') || '0');
+      const numB = parseInt(b.episode_title?.replace(/[^0-9]/g, '') || '0');
+      return numA - numB;
+    });
+
   const firstSeries = seriesStories[0] || {};
 
   return (
@@ -92,3 +101,4 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
     </div>
   );
 };
+        
