@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface AudioPlayerProps {
   currentPlayingEpisode: any;
@@ -18,6 +18,24 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
   audioRef,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef?.current;
+    if (!audio) return;
+
+    const updateTime = () => setCurrentTime(audio.currentTime);
+    const updateDuration = () => setDuration(audio.duration || 0);
+
+    audio.addEventListener('timeupdate', updateTime);
+    audio.addEventListener('loadedmetadata', updateDuration);
+
+    return () => {
+      audio.removeEventListener('timeupdate', updateTime);
+      audio.removeEventListener('loadedmetadata', updateDuration);
+    };
+  }, [audioRef]);
 
   if (!currentPlayingEpisode) return null;
 
@@ -27,9 +45,24 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     }
   };
 
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = Number(e.target.value);
+    setCurrentTime(time);
+    if (audioRef && audioRef.current) {
+      audioRef.current.currentTime = time;
+    }
+  };
+
+  const formatTime = (timeInSeconds: number) => {
+    if (isNaN(timeInSeconds)) return "0:00";
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
   return (
     <>
-      {/* Mini Player Bar (Neeche navigation bar ke bilkul upar fixed rahega) */}
+      {/* Mini Player Bar */}
       <div 
         onClick={() => setIsExpanded(true)}
         className="fixed bottom-14 left-0 right-0 bg-[#1a1721] border-t border-orange-500/50 p-3 px-4 z-30 shadow-2xl flex items-center justify-between cursor-pointer"
@@ -66,7 +99,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </div>
       </div>
 
-      {/* Expanded Player View (Jo navigation bar ke upar khulega, tab gayab nahi honge) */}
+      {/* Expanded Player View with Progress Bar & Time */}
       {isExpanded && (
         <div className="fixed inset-x-0 top-0 bottom-14 bg-[#0f0d13] z-40 flex flex-col justify-between py-6 px-6 overflow-y-auto">
           {/* Top Header */}
@@ -85,7 +118,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           </div>
 
           {/* Center Poster & Details */}
-          <div className="flex flex-col items-center justify-center space-y-4 my-auto py-4">
+          <div className="flex flex-col items-center justify-center space-y-4 my-auto py-2">
             <div className="w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/80 bg-gray-900">
               <img 
                 src={currentPlayingEpisode.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400'} 
@@ -96,6 +129,22 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             <div className="text-center space-y-1 px-4">
               <h2 className="text-sm font-bold text-white tracking-wide">{currentPlayingEpisode.episode_title}</h2>
               <p className="text-xs text-gray-400">{currentPlayingEpisode.title}</p>
+            </div>
+          </div>
+
+          {/* Progress Bar & Time Tracker */}
+          <div className="space-y-2 px-2">
+            <input 
+              type="range" 
+              min={0} 
+              max={duration || 100} 
+              value={currentTime} 
+              onChange={handleSeek}
+              className="w-full h-1.5 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-orange-500"
+            />
+            <div className="flex justify-between text-[11px] text-gray-400 font-medium">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(duration)}</span>
             </div>
           </div>
 
@@ -139,3 +188,4 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     </>
   );
 };
+              
