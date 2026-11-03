@@ -29,10 +29,10 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   return (
     <>
-      {/* Mini Player Bar */}
+      {/* Mini Player Bar (Neeche navigation bar ke bilkul upar fixed rahega) */}
       <div 
         onClick={() => setIsExpanded(true)}
-        className="fixed bottom-16 left-0 right-0 bg-[#1a1721] border-t border-orange-500/50 p-3 px-4 z-40 shadow-2xl flex items-center justify-between cursor-pointer"
+        className="fixed bottom-14 left-0 right-0 bg-[#1a1721] border-t border-orange-500/50 p-3 px-4 z-30 shadow-2xl flex items-center justify-between cursor-pointer"
       >
         <div className="flex items-center space-x-3 truncate">
           <div className="w-9 h-9 bg-orange-500/20 rounded-lg flex items-center justify-center text-orange-400 font-bold text-xs">
@@ -66,9 +66,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
         </div>
       </div>
 
-      {/* Full Screen Expanded Player Panel (Fixed z-[60] to cover bottom nav completely) */}
+      {/* Expanded Player View (Jo navigation bar ke upar khulega, tab gayab nahi honge) */}
       {isExpanded && (
-        <div className="fixed inset-0 bg-[#0f0d13] z-[60] flex flex-col justify-between py-8 px-6">
+        <div className="fixed inset-x-0 top-0 bottom-14 bg-[#0f0d13] z-40 flex flex-col justify-between py-6 px-6 overflow-y-auto">
           {/* Top Header */}
           <div className="flex justify-between items-center">
             <button 
@@ -85,8 +85,8 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           </div>
 
           {/* Center Poster & Details */}
-          <div className="flex flex-col items-center justify-center space-y-5 my-auto">
-            <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/80 bg-gray-900">
+          <div className="flex flex-col items-center justify-center space-y-4 my-auto py-4">
+            <div className="w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/80 bg-gray-900">
               <img 
                 src={currentPlayingEpisode.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400'} 
                 alt="Story Poster" 
@@ -99,9 +99,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             </div>
           </div>
 
-          {/* Bottom Controls - Properly spaced and aligned */}
-          <div className="space-y-4 pb-4">
-            <div className="flex items-center justify-center space-x-5">
+          {/* Bottom Controls */}
+          <div className="space-y-4 pb-2">
+            <div className="flex items-center justify-center space-x-4">
               <button 
                 onClick={() => skipTime(-10)}
                 className="text-gray-300 hover:text-white text-xs font-medium bg-gray-900 border border-gray-800 px-3 py-2.5 rounded-xl cursor-pointer transition-all shadow-md"
@@ -116,7 +116,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
               </button>
               <button 
                 onClick={togglePlayPause}
-                className="w-16 h-16 bg-orange-500 hover:bg-orange-600 rounded-full flex items-center justify-center text-white text-2xl shadow-xl cursor-pointer transition-all"
+                className="w-14 h-14 bg-orange-500 hover:bg-orange-600 rounded-full flex items-center justify-center text-white text-xl shadow-xl cursor-pointer transition-all"
               >
                 {isPlaying ? '⏸' : '▶'}
               </button>
@@ -139,4 +139,3 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     </>
   );
 };
-              
