@@ -326,6 +326,7 @@ export default function App() {
         togglePlayPause={togglePlayPause}
         playNext={playNext}
         playPrev={playPrev}
+        audioRef={audioRef}
       />
 
       <div className="fixed bottom-0 left-0 right-0 bg-[#121017] border-t border-gray-800 flex justify-around py-3 px-2 z-50">
@@ -354,5 +355,5 @@ export default function App() {
       </div>
     </div>
   );
-  }
-                                                                                                                        
+        }
+              
