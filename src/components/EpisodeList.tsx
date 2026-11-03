@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 interface EpisodeListProps {
   selectedStoryTitle: string;
@@ -6,6 +6,8 @@ interface EpisodeListProps {
   unlockedEpisodes: Record<string, boolean>;
   onBack: () => void;
   onEpisodeAction: (ep: any, allSeriesEpisodes: any[], index: number) => void;
+  coins: number;
+  onUnlockEpisode: (ep: any, price: number) => boolean;
 }
 
 export const EpisodeList: React.FC<EpisodeListProps> = ({
@@ -14,12 +16,14 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
   unlockedEpisodes,
   onBack,
   onEpisodeAction,
+  coins,
+  onUnlockEpisode,
 }) => {
-  // Series ke episodes filter karke unhe properly sort kar lo (Episode 1 pehle, phir 2, etc.)
+  const [popupEpisode, setPopupEpisode] = useState<any>(null);
+
   const seriesStories = stories
     .filter(s => s.title === selectedStoryTitle)
     .sort((a, b) => {
-      // Agar episode titles me number hain toh unke hisab se sort karega
       const numA = parseInt(a.episode_title?.replace(/[^0-9]/g, '') || '0');
       const numB = parseInt(b.episode_title?.replace(/[^0-9]/g, '') || '0');
       return numA - numB;
@@ -27,8 +31,34 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
 
   const firstSeries = seriesStories[0] || {};
 
+  const handleItemClick = (ep: any, allSeries: any[], idx: number) => {
+    const price = Number(ep.coin_price) || 0;
+    const isUnlocked = price === 0 || unlockedEpisodes[ep.id];
+
+    if (!isUnlocked) {
+      if (coins < price) {
+        alert(`❌ Not enough coins! This episode requires ${price} coins.`);
+        return;
+      }
+      // Popup dikhao jisme Unlock / Play Now ka option ho
+      setPopupEpisode({ ep, allSeries, idx, price });
+    } else {
+      onEpisodeAction(ep, allSeries, idx);
+    }
+  };
+
+  const confirmUnlock = () => {
+    if (!popupEpisode) return;
+    const { ep, allSeries, idx, price } = popupEpisode;
+    const success = onUnlockEpisode(ep, price);
+    if (success) {
+      setPopupEpisode(null);
+      onEpisodeAction(ep, allSeries, idx);
+    }
+  };
+
   return (
-    <div className="space-y-4 max-w-xl mx-auto">
+    <div className="space-y-4 max-w-xl mx-auto pb-20 relative">
       <button 
         onClick={onBack}
         className="text-xs text-orange-400 font-bold mb-2 flex items-center bg-[#16131c] px-3 py-1.5 rounded-lg border border-gray-800 w-fit cursor-pointer hover:border-orange-500 transition-all"
@@ -58,7 +88,7 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
       </div>
 
       {/* Episodes List */}
-      <div className="space-y-2.5 pb-16">
+      <div className="space-y-2.5">
         {seriesStories.map((ep, idx) => {
           const price = Number(ep.coin_price) || 0;
           const isUnlocked = price === 0 || unlockedEpisodes[ep.id];
@@ -85,7 +115,7 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
               </div>
 
               <button 
-                onClick={() => onEpisodeAction(ep, seriesStories, idx)}
+                onClick={() => handleItemClick(ep, seriesStories, idx)}
                 className={`text-[11px] font-bold px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1 whitespace-nowrap ${
                   price > 0 && !isUnlocked 
                     ? 'bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white' 
@@ -98,7 +128,38 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
           );
         })}
       </div>
+
+      {/* Professional Congratulations Modal Popup */}
+      {popupEpisode && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#1a1721] border border-orange-500/50 rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-fadeIn">
+            <div className="w-12 h-12 bg-orange-500/20 text-orange-400 rounded-full flex items-center justify-center mx-auto text-xl font-bold">
+              🎉
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider">Unlock Episode</h3>
+              <p className="text-xs text-gray-300 mt-1">
+                Do you want to use <span className="text-yellow-400 font-bold">{popupEpisode.price} Coins</span> to unlock <span className="text-orange-400 font-bold">{popupEpisode.ep.episode_title}</span>?
+              </p>
+            </div>
+            <div className="flex space-x-3 pt-2">
+              <button 
+                onClick={() => setPopupEpisode(null)}
+                className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-bold py-2.5 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmUnlock}
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg cursor-pointer flex items-center justify-center gap-1"
+              >
+                ✨ Play Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
-        
+                  
