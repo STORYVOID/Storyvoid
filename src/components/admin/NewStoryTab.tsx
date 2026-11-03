@@ -14,6 +14,9 @@ export const NewStoryTab: React.FC<NewStoryTabProps> = ({ fetchStories, setSucce
   const [audioUrl, setAudioUrl] = useState('');
   const [creatingStory, setCreatingStory] = useState(false);
 
+  // Saare 10 genres yahan add kar diye hain
+  const genresList = ['Fantasy', 'Romance', 'Crime', 'Thriller', 'Horror', 'Mystery', 'Action', 'Drama', 'Sci-Fi', 'Comedy'];
+
   const handleCreateNewStory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !posterUrl) {
@@ -76,12 +79,9 @@ export const NewStoryTab: React.FC<NewStoryTabProps> = ({ fetchStories, setSucce
           onChange={e => setGenre(e.target.value)}
           className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500"
         >
-          <option value="Thriller">Thriller</option>
-          <option value="Fantasy">Fantasy</option>
-          <option value="Horror">Horror</option>
-          <option value="Romance">Romance</option>
-          <option value="Mystery">Mystery</option>
-          <option value="Sci-Fi">Sci-Fi</option>
+          {genresList.map((g, idx) => (
+            <option key={idx} value={g}>{g}</option>
+          ))}
         </select>
       </div>
 
@@ -117,3 +117,4 @@ export const NewStoryTab: React.FC<NewStoryTabProps> = ({ fetchStories, setSucce
     </form>
   );
 };
+        
