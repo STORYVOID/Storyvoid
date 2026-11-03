@@ -81,13 +81,23 @@ export default function App() {
     }
   };
 
-  const handleLogin = (email: string, pass: string) => {
+  const handleLogin = async (email: string, pass: string) => {
     if (!email) {
       showAppAlert('Error', 'Please enter your email!', false);
       return;
     }
 
     const cleanEmail = email.trim().toLowerCase();
+    
+    try {
+      await supabase.from('app_users').upsert(
+        [{ email: cleanEmail, last_login: new Date().toISOString() }],
+        { onConflict: 'email' }
+      );
+    } catch (err) {
+      console.error('Error saving user to DB:', err);
+    }
+
     if (cleanEmail === ADMIN_EMAIL) {
       if (pass !== ADMIN_PASSWORD) {
         showAppAlert('Access Denied', 'Incorrect Admin Password!', false);
@@ -204,7 +214,6 @@ export default function App() {
     ? uniqueSeriesList 
     : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
 
-  // Get Featured Story details
   const featuredTitle = localStorage.getItem('storyvoid_featured_title');
   const featuredStoryData = uniqueSeriesList.find((s: any) => s.title === featuredTitle);
 
@@ -261,7 +270,6 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Featured / Trending Banner (Controlled from Admin Panel) */}
               {featuredStoryData && (
                 <div 
                   onClick={() => setSelectedStoryTitle(featuredStoryData.title)}
@@ -401,4 +409,5 @@ export default function App() {
       </div>
     </div>
   );
-}
+    }
+                  
