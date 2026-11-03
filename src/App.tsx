@@ -82,11 +82,9 @@ export default function App() {
       }
       setIsAdmin(true);
       localStorage.setItem('storyvoid_is_admin', 'true');
-      alert('🔓 Welcome Admin!');
     } else {
       setIsAdmin(false);
       localStorage.removeItem('storyvoid_is_admin');
-      alert('👤 Logged in as Listener.');
     }
     setUserEmail(cleanEmail);
     setIsLoggedIn(true);
@@ -110,28 +108,23 @@ export default function App() {
     alert('🎉 Ad watched! +20 coins added.');
   };
 
+  const handleUnlockEpisode = (ep: any, price: number) => {
+    if (coins < price) {
+      alert(`❌ Not enough coins!`);
+      return false;
+    }
+    const updatedCoins = coins - price;
+    setCoins(updatedCoins);
+    
+    const newUnlocked = { ...unlockedEpisodes, [ep.id]: true };
+    setUnlockedEpisodes(newUnlocked);
+    localStorage.setItem('storyvoid_unlocked', JSON.stringify(newUnlocked));
+    return true;
+  };
+
   const handleEpisodeAction = (ep: any, allSeriesEpisodes: any[], index: number) => {
     setCurrentPlaylist(allSeriesEpisodes);
     setCurrentIndex(index);
-
-    const price = Number(ep.coin_price) || 0;
-    const isUnlocked = price === 0 || unlockedEpisodes[ep.id] || false;
-
-    if (!isUnlocked) {
-      if (coins < price) {
-        alert(`❌ Not enough coins! This episode requires ${price} coins. Watch an ad to earn more.`);
-        return;
-      }
-      const updatedCoins = coins - price;
-      setCoins(updatedCoins);
-      
-      const newUnlocked = { ...unlockedEpisodes, [ep.id]: true };
-      setUnlockedEpisodes(newUnlocked);
-      localStorage.setItem('storyvoid_unlocked', JSON.stringify(newUnlocked));
-
-      alert(`🎉 Episode Unlocked Successfully! Enjoy listening.`);
-    }
-
     playAudio(ep);
   };
 
@@ -224,6 +217,8 @@ export default function App() {
               unlockedEpisodes={unlockedEpisodes}
               onBack={() => setSelectedStoryTitle(null)}
               onEpisodeAction={handleEpisodeAction}
+              coins={coins}
+              onUnlockEpisode={handleUnlockEpisode}
             />
           ) : (
             <div>
@@ -355,5 +350,5 @@ export default function App() {
       </div>
     </div>
   );
-        }
-              
+}
+  
