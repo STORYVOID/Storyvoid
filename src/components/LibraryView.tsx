@@ -21,24 +21,18 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('storyvoid_library');
-      if (saved) {
-        setSavedStories(JSON.parse(saved));
-      } else {
-        // Default me agar kuch nahi hai toh saari series me se pehli 2-3 dikha sakte hain ya khali rakh sakte hain
-        const uniqueMap = new Map();
-        stories.forEach(item => {
-          if (item.title && !uniqueMap.has(item.title)) {
-            uniqueMap.set(item.title, {
-              title: item.title,
-              genre: item.genre || 'Thriller',
-              poster_url: item.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400',
-            });
-          }
-        });
-        const all = Array.from(uniqueMap.values());
-        setSavedStories(all);
-      }
+      const uniqueMap = new Map();
+      stories.forEach(item => {
+        if (item.title && !uniqueMap.has(item.title)) {
+          uniqueMap.set(item.title, {
+            title: item.title,
+            genre: item.genre || 'Thriller',
+            poster_url: item.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400',
+          });
+        }
+      });
+      const all = Array.from(uniqueMap.values());
+      setSavedStories(all);
     } catch (err) {
       console.error('Error loading library:', err);
     }
@@ -91,4 +85,3 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     </div>
   );
 };
-                        
