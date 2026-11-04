@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface EpisodeListProps {
   selectedStoryTitle: string;
@@ -20,6 +20,35 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
   onUnlockEpisode,
 }) => {
   const [popupEpisode, setPopupEpisode] = useState<any>(null);
+  const [isFollowed, setIsFollowed] = useState<boolean>(false);
+
+  useEffect(() => {
+    try {
+      const savedFollows = localStorage.getItem('storyvoid_followed_series');
+      const followedTitles: string[] = savedFollows ? JSON.parse(savedFollows) : [];
+      setIsFollowed(followedTitles.includes(selectedStoryTitle));
+    } catch (err) {
+      console.error('Error checking follow status:', err);
+    }
+  }, [selectedStoryTitle]);
+
+  const toggleFollow = () => {
+    try {
+      const savedFollows = localStorage.getItem('storyvoid_followed_series');
+      let followedTitles: string[] = savedFollows ? JSON.parse(savedFollows) : [];
+
+      if (isFollowed) {
+        followedTitles = followedTitles.filter(t => t !== selectedStoryTitle);
+        setIsFollowed(false);
+      } else {
+        followedTitles.push(selectedStoryTitle);
+        setIsFollowed(true);
+      }
+      localStorage.setItem('storyvoid_followed_series', JSON.stringify(followedTitles));
+    } catch (err) {
+      console.error('Error toggling follow:', err);
+    }
+  };
 
   const seriesStories = stories
     .filter(s => s.title === selectedStoryTitle)
@@ -52,13 +81,26 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
   };
 
   return (
-    <div className="space-y-4 max-w-xl mx-auto pb-20 relative">
-      <button 
-        onClick={onBack}
-        className="text-xs text-orange-400 font-bold mb-2 flex items-center bg-[#16131c] px-3 py-1.5 rounded-lg border border-gray-800 w-fit cursor-pointer hover:border-orange-500 transition-all"
-      >
-        ← Back to Home
-      </button>
+    <div className="space-y-4 max-w-xl mx-auto pb-20 relative p-4">
+      <div className="flex justify-between items-center mb-2">
+        <button 
+          onClick={onBack}
+          className="text-xs text-orange-400 font-bold flex items-center bg-[#16131c] px-3 py-1.5 rounded-lg border border-gray-800 w-fit cursor-pointer hover:border-orange-500 transition-all"
+        >
+          ← Back
+        </button>
+
+        <button 
+          onClick={toggleFollow}
+          className={`text-xs font-bold px-4 py-1.5 rounded-xl border transition-all cursor-pointer shadow-md ${
+            isFollowed 
+              ? 'bg-orange-500 text-white border-orange-500' 
+              : 'bg-[#16131c] text-orange-400 border-gray-800 hover:border-orange-500'
+          }`}
+        >
+          {isFollowed ? '❤️ Following' : '🤍 Follow Series'}
+        </button>
+      </div>
 
       <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 flex gap-4 items-center shadow-lg">
         <img 
@@ -153,3 +195,4 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
     </div>
   );
 };
+          
