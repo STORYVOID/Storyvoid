@@ -9,6 +9,7 @@ interface AddEpisodeTabProps {
 
 export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStories, setSuccessMessage }) => {
   const [selectedStoryTitle, setSelectedStoryTitle] = useState('');
+  const [episodeNumber, setEpisodeNumber] = useState('1');
   const [episodeTitle, setEpisodeTitle] = useState('');
   const [coinPrice, setCoinPrice] = useState('10');
   const [audioUrl, setAudioUrl] = useState('');
@@ -27,10 +28,13 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
       setUploading(true);
       const selectedStoryRef = stories.find(s => s.title === selectedStoryTitle);
 
+      // Episode title ke sath proper numbering format save karne ke liye
+      const formattedEpisodeTitle = `Episode ${episodeNumber}: ${episodeTitle}`;
+
       const { error } = await supabase.from('stories').insert([
         {
           title: selectedStoryTitle,
-          episode_title: episodeTitle,
+          episode_title: formattedEpisodeTitle,
           coin_price: Number(coinPrice),
           audio_url: audioUrl,
           genre: selectedStoryRef?.genre || 'Thriller',
@@ -42,6 +46,7 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
       if (error) throw error;
 
       setSuccessMessage('🎉 Episode successfully published!');
+      setEpisodeNumber(String(Number(episodeNumber) + 1)); // Agla number auto-increment karne ke liye
       setEpisodeTitle('');
       setAudioUrl('');
       fetchStories();
@@ -75,12 +80,24 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
       </div>
 
       <div>
-        <label className="text-[10px] text-gray-400 block mb-1">Episode Title</label>
+        <label className="text-[10px] text-gray-400 block mb-1">Episode Number (e.g. 8, 9, 10)</label>
+        <input 
+          type="number" 
+          value={episodeNumber} 
+          onChange={e => setEpisodeNumber(e.target.value)}
+          placeholder="8" 
+          className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="text-[10px] text-gray-400 block mb-1">Episode Title / Name</label>
         <input 
           type="text" 
           value={episodeTitle} 
           onChange={e => setEpisodeTitle(e.target.value)}
-          placeholder="e.g. Episode 2: The Return" 
+          placeholder="e.g. The Final Battle" 
           className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500"
           required
         />
@@ -119,3 +136,4 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
     </form>
   );
 };
+      
