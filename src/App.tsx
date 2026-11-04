@@ -9,11 +9,13 @@ import { SearchView } from './components/SearchView';
 import { LibraryView } from './components/LibraryView';
 import { NotificationModal } from './components/NotificationModal';
 import { SplashScreen } from './components/SplashScreen';
+import { CoinStoreModal } from './components/CoinStoreModal';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'home' | 'search' | 'library' | 'profile' | 'admin'>('home');
   const [coins, setCoins] = useState<number>(30);
+  const [isCoinStoreOpen, setIsCoinStoreOpen] = useState<boolean>(false);
   const [stories, setStories] = useState<any[]>([]);
   const [loadingStories, setLoadingStories] = useState<boolean>(true);
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
@@ -67,8 +69,11 @@ export default function App() {
     }, 2500);
 
     fetchStories();
+    if (userEmail) {
+      fetchUserCoins(userEmail);
+    }
     return () => clearTimeout(timer);
-  }, []);
+  }, [userEmail]);
 
   const fetchStories = async () => {
     try {
@@ -87,6 +92,33 @@ export default function App() {
     }
   };
 
+  const fetchUserCoins = async (email: string) => {
+    try {
+      const { data } = await supabase
+        .from('app_users')
+        .select('coins')
+        .eq('email', email)
+        .single();
+      
+      if (data && data.coins !== undefined) {
+        setCoins(data.coins);
+      }
+    } catch (err) {
+      console.error('Error fetching coins from DB:', err);
+    }
+  };
+
+  const updateUserCoinsInDB = async (newCoins: number, email: string) => {
+    try {
+      await supabase
+        .from('app_users')
+        .update({ coins: newCoins })
+        .eq('email', email);
+    } catch (err) {
+      console.error('Error updating coins in DB:', err);
+    }
+  };
+
   const handleLogin = async (email: string, pass: string) => {
     if (!email) {
       showAppAlert('Error', 'Please enter your email!', false);
@@ -96,10 +128,19 @@ export default function App() {
     const cleanEmail = email.trim().toLowerCase();
     
     try {
+      const { data: existingUser } = await supabase
+        .from('app_users')
+        .select('coins')
+        .eq('email', cleanEmail)
+        .single();
+
+      const initialCoins = existingUser?.coins ?? 30;
+
       await supabase.from('app_users').upsert(
-        [{ email: cleanEmail, last_login: new Date().toISOString() }],
+        [{ email: cleanEmail, coins: initialCoins, last_login: new Date().toISOString() }],
         { onConflict: 'email' }
       );
+      setCoins(initialCoins);
     } catch (err) {
       console.error('Error saving user to DB:', err);
     }
@@ -135,17 +176,33 @@ export default function App() {
   };
 
   const watchAdForCoins = () => {
-    setCoins(prev => prev + 20);
+    const updatedCoins = coins + 20;
+    setCoins(updatedCoins);
+    if (userEmail) {
+      updateUserCoinsInDB(updatedCoins, userEmail);
+    }
     showAppAlert('Coins Added', '🎉 Ad watched successfully! +20 coins added to your wallet.');
+  };
+
+  const handleBuyCoins = (coinsToAdd: number, amount: number) => {
+    const updatedCoins = coins + coinsToAdd;
+    setCoins(updatedCoins);
+    if (userEmail) {
+      updateUserCoinsInDB(updatedCoins, userEmail);
+    }
+    showAppAlert('Coins Added', `🎉 Successfully purchased ${coinsToAdd} coins for ₹${amount}!`);
   };
 
   const handleUnlockEpisode = (ep: any, price: number) => {
     if (coins < price) {
-      showAppAlert('Insufficient Coins', `❌ You need ${price} coins to unlock this episode. Watch an ad to earn more!`, false);
+      showAppAlert('Insufficient Coins', `❌ You need ${price} coins to unlock this episode. Watch an ad or buy coins from store!`, false);
       return false;
     }
     const updatedCoins = coins - price;
     setCoins(updatedCoins);
+    if (userEmail) {
+      updateUserCoinsInDB(updatedCoins, userEmail);
+    }
     
     const newUnlocked = { ...unlockedEpisodes, [ep.id]: true };
     setUnlockedEpisodes(newUnlocked);
@@ -265,14 +322,24 @@ export default function App() {
         onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
       />
 
+      <CoinStoreModal 
+        isOpen={isCoinStoreOpen}
+        onClose={() => setIsCoinStoreOpen(false)}
+        onBuyCoins={handleBuyCoins}
+      />
+
       <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-[#121017]">
         <div>
           <h1 className="text-xl font-extrabold tracking-wider text-orange-500">STORYVOID</h1>
           <p className="text-[10px] text-gray-400">SERIALIZED AUDIO</p>
         </div>
-        <div className="flex items-center bg-gray-800 px-3 py-1.5 rounded-full border border-gray-700">
+        <div 
+          onClick={() => setIsCoinStoreOpen(true)}
+          className="flex items-center bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-700 cursor-pointer hover:border-orange-500 transition-all shadow-md"
+        >
           <span className="text-yellow-400 mr-1.5">🟡</span>
           <span className="text-xs font-semibold">{coins} Coins</span>
+          <span className="ml-1.5 text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full font-bold">+</span>
         </div>
       </div>
 
@@ -445,5 +512,4 @@ export default function App() {
       </div>
     </div>
   );
-        }
-    
+}
