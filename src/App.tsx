@@ -319,23 +319,23 @@ export default function App() {
                   <p className="text-xs text-gray-400 mb-2">No series found in this genre.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2.5">
                   {filteredSeriesList.map((series: any, idx: number) => (
                     <div 
                       key={idx} 
                       onClick={() => setSelectedStoryTitle(series.title)}
-                      className="bg-[#16131c] rounded-xl p-2.5 border border-gray-800 cursor-pointer hover:border-orange-500 transition-all shadow-md"
+                      className="bg-[#16131c] rounded-xl p-2 border border-gray-800 cursor-pointer hover:border-orange-500 transition-all shadow-md"
                     >
                       <img 
                         src={series.poster_url} 
                         alt="Poster" 
-                        className="h-36 w-full object-cover rounded-lg mb-2 border border-gray-700" 
+                        className="h-28 w-full object-cover rounded-lg mb-1.5 border border-gray-700" 
                       />
-                      <span className="text-[9px] bg-orange-900/60 text-orange-300 px-2.5 py-0.5 rounded-full font-bold">
+                      <span className="text-[8px] bg-orange-900/60 text-orange-300 px-2 py-0.5 rounded-full font-bold inline-block">
                         {series.genre}
                       </span>
-                      <h4 className="text-xs font-bold truncate mt-1 text-white">{series.title}</h4>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{series.episodesCount} Episodes</p>
+                      <h4 className="text-[11px] font-bold truncate mt-1 text-white">{series.title}</h4>
+                      <p className="text-[9px] text-gray-400">{series.episodesCount} Eps</p>
                     </div>
                   ))}
                 </div>
@@ -407,4 +407,5 @@ export default function App() {
       </div>
     </div>
   );
-  }
+          }
+                          
