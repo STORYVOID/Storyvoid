@@ -21,7 +21,6 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
 }) => {
   const [popupEpisode, setPopupEpisode] = useState<any>(null);
 
-  // Database me upload hone ke time (created_at) ke hissab se sahi kram me sort karne ke liye
   const seriesStories = stories
     .filter(s => s.title === selectedStoryTitle)
     .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -61,7 +60,6 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
         ← Back to Home
       </button>
 
-      {/* Series Header Card */}
       <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 flex gap-4 items-center shadow-lg">
         <img 
           src={firstSeries.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400'} 
@@ -82,7 +80,6 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
         <span className="text-[10px] text-gray-500">{seriesStories.length} Episodes Available</span>
       </div>
 
-      {/* Episodes List */}
       <div className="space-y-2.5">
         {seriesStories.map((ep, idx) => {
           const price = Number(ep.coin_price) || 0;
@@ -124,7 +121,6 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
         })}
       </div>
 
-      {/* Professional Congratulations Modal Popup */}
       {popupEpisode && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
           <div className="bg-[#1a1721] border border-orange-500/50 rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-fadeIn">
@@ -146,5 +142,14 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
               </button>
               <button 
                 onClick={confirmUnlock}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-
-              
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg cursor-pointer flex items-center justify-center gap-1"
+              >
+                ✨ Play Now
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
