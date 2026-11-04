@@ -11,7 +11,6 @@ export const ManageTab: React.FC<ManageTabProps> = ({ stories, fetchStories }) =
   const [editingPoster, setEditingPoster] = useState('');
   const [editingDescription, setEditingDescription] = useState('');
 
-  // Episode Editing State
   const [editingEpisodeId, setEditingEpisodeId] = useState<string | null>(null);
   const [editEpTitle, setEditEpTitle] = useState('');
   const [editEpPrice, setEditEpPrice] = useState('0');
@@ -41,9 +40,9 @@ export const ManageTab: React.FC<ManageTabProps> = ({ stories, fetchStories }) =
       if (error) throw error;
       alert('🗑️ Episode successfully deleted!');
       fetchStories();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting episode:', err);
-      alert('❌ Error deleting episode.');
+      alert(`❌ Error deleting episode: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -62,9 +61,9 @@ export const ManageTab: React.FC<ManageTabProps> = ({ stories, fetchStories }) =
       alert('✨ Episode successfully updated!');
       setEditingEpisodeId(null);
       fetchStories();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error updating episode:', err);
-      alert('❌ Error updating episode.');
+      alert(`❌ Error updating episode: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -77,9 +76,9 @@ export const ManageTab: React.FC<ManageTabProps> = ({ stories, fetchStories }) =
       alert('🗑️ Series successfully deleted!');
       setSelectedSeriesTitle(null);
       fetchStories();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting series:', err);
-      alert('❌ Error deleting series.');
+      alert(`❌ Error deleting series: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -99,9 +98,9 @@ export const ManageTab: React.FC<ManageTabProps> = ({ stories, fetchStories }) =
       if (error) throw error;
       alert('✨ Series details successfully updated!');
       fetchStories();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error updating series:', err);
-      alert('❌ Error updating series details.');
+      alert(`❌ Error updating series details: ${err.message || 'Unknown error'}`);
     }
   };
 
@@ -276,4 +275,4 @@ export const ManageTab: React.FC<ManageTabProps> = ({ stories, fetchStories }) =
     </div>
   );
 };
-          
+                  
