@@ -21,6 +21,7 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
 }) => {
   const [popupEpisode, setPopupEpisode] = useState<any>(null);
 
+  // Episodes ko Episode Number ke hissab se sahi kram (1, 2, 3... 8) me sort karne ke liye
   const seriesStories = stories
     .filter(s => s.title === selectedStoryTitle)
     .sort((a, b) => {
@@ -37,10 +38,8 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
 
     if (!isUnlocked) {
       if (coins < price) {
-        alert(`❌ Not enough coins! This episode requires ${price} coins.`);
         return;
       }
-      // Popup dikhao jisme Unlock / Play Now ka option ho
       setPopupEpisode({ ep, allSeries, idx, price });
     } else {
       onEpisodeAction(ep, allSeries, idx);
@@ -162,4 +161,4 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
     </div>
   );
 };
-                  
+                    
