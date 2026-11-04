@@ -21,14 +21,10 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
 }) => {
   const [popupEpisode, setPopupEpisode] = useState<any>(null);
 
-  // Episodes ko Episode Number ke hissab se sahi kram (1, 2, 3... 8) me sort karne ke liye
+  // Database me upload hone ke time (created_at) ke hissab se sahi kram me sort karne ke liye
   const seriesStories = stories
     .filter(s => s.title === selectedStoryTitle)
-    .sort((a, b) => {
-      const numA = parseInt(a.episode_title?.replace(/[^0-9]/g, '') || '0');
-      const numB = parseInt(b.episode_title?.replace(/[^0-9]/g, '') || '0');
-      return numA - numB;
-    });
+    .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
 
   const firstSeries = seriesStories[0] || {};
 
@@ -150,15 +146,5 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
               </button>
               <button 
                 onClick={confirmUnlock}
-                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold py-2.5 rounded-xl shadow-lg cursor-pointer flex items-center justify-center gap-1"
-              >
-                ✨ Play Now
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-                    
+                className="flex-1 bg-orange-500 hover:bg-orange-600 text-white text-xs font-
+              
