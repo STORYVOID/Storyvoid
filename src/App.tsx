@@ -5,6 +5,7 @@ import { AuthScreen } from './components/AuthScreen';
 import { AudioPlayer } from './components/AudioPlayer';
 import { EpisodeList } from './components/EpisodeList';
 import { ProfileView } from './components/ProfileView';
+import { SearchView } from './components/SearchView';
 import { NotificationModal } from './components/NotificationModal';
 
 export default function App() {
@@ -345,14 +346,13 @@ export default function App() {
       )}
 
       {activeTab === 'search' && (
-        <div className="p-4 text-center">
-          <h2 className="text-lg font-bold text-orange-500 mb-3">Search Stories</h2>
-          <input 
-            type="text" 
-            placeholder="Search audio thrillers..." 
-            className="w-full bg-[#16131c] border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500"
-          />
-        </div>
+        <SearchView 
+          stories={stories}
+          unlockedEpisodes={unlockedEpisodes}
+          coins={coins}
+          onEpisodeAction={handleEpisodeAction}
+          onUnlockEpisode={handleUnlockEpisode}
+        />
       )}
 
       {activeTab === 'library' && (
@@ -407,4 +407,4 @@ export default function App() {
       </div>
     </div>
   );
-}
+  }
