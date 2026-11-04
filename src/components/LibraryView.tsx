@@ -17,13 +17,16 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   onUnlockEpisode,
 }) => {
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
-  const [savedStories, setSavedStories] = useState<any[]>([]);
+  const [followedStories, setFollowedStories] = useState<any[]>([]);
 
-  useEffect(() => {
+  const loadFollowedStories = () => {
     try {
+      const savedFollows = localStorage.getItem('storyvoid_followed_series');
+      const followedTitles: string[] = savedFollows ? JSON.parse(savedFollows) : [];
+
       const uniqueMap = new Map();
       stories.forEach(item => {
-        if (item.title && !uniqueMap.has(item.title)) {
+        if (item.title && followedTitles.includes(item.title) && !uniqueMap.has(item.title)) {
           uniqueMap.set(item.title, {
             title: item.title,
             genre: item.genre || 'Thriller',
@@ -31,11 +34,14 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
           });
         }
       });
-      const all = Array.from(uniqueMap.values());
-      setSavedStories(all);
+      setFollowedStories(Array.from(uniqueMap.values()));
     } catch (err) {
       console.error('Error loading library:', err);
     }
+  };
+
+  useEffect(() => {
+    loadFollowedStories();
   }, [stories]);
 
   if (selectedStoryTitle) {
@@ -44,7 +50,10 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
         selectedStoryTitle={selectedStoryTitle}
         stories={stories}
         unlockedEpisodes={unlockedEpisodes}
-        onBack={() => setSelectedStoryTitle(null)}
+        onBack={() => {
+          setSelectedStoryTitle(null);
+          loadFollowedStories();
+        }}
         onEpisodeAction={onEpisodeAction}
         coins={coins}
         onUnlockEpisode={onUnlockEpisode}
@@ -54,16 +63,15 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-sm font-black text-orange-500 uppercase tracking-wider">📚 Your Library & History</h2>
-      <p className="text-[10px] text-gray-400">Aapki follow ki gayi stories aur listening history yahan dikhegi.</p>
+      <h2 className="text-sm font-black text-orange-500 uppercase tracking-wider">📚 Your Library</h2>
 
-      {savedStories.length === 0 ? (
+      {followedStories.length === 0 ? (
         <div className="bg-[#16131c] p-6 rounded-xl border border-gray-800 text-center mt-6">
-          <p className="text-xs text-gray-400">No saved stories yet.</p>
+          <p className="text-xs text-gray-400">No followed stories yet. Explore home and follow your favorite series!</p>
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-2.5">
-          {savedStories.map((series: any, idx: number) => (
+          {followedStories.map((series: any, idx: number) => (
             <div 
               key={idx} 
               onClick={() => setSelectedStoryTitle(series.title)}
