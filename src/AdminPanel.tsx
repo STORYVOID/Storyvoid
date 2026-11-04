@@ -11,10 +11,14 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, setSuccessMessage }) => {
-  const [activeTab, setActiveTab] = useState<'episode' | 'new' | 'manage' | 'featured' | 'users'>('users');
+  const [activeTab, setActiveTab] = useState<'episode' | 'new' | 'manage' | 'featured' | 'users'>('featured');
   
   const [selectedFeaturedTitle, setSelectedFeaturedTitle] = useState(() => {
     return localStorage.getItem('storyvoid_featured_title') || '';
+  });
+
+  const [customBannerImage, setCustomBannerImage] = useState(() => {
+    return localStorage.getItem('storyvoid_custom_banner_image') || '';
   });
 
   const uniqueSeriesList = Array.from(new Set(stories.map(s => s.title)));
@@ -22,7 +26,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
   const handleSaveFeatured = (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('storyvoid_featured_title', selectedFeaturedTitle);
-    setSuccessMessage('⭐ Featured Banner successfully updated on Home screen!');
+    localStorage.setItem('storyvoid_custom_banner_image', customBannerImage);
+    setSuccessMessage('⭐ Featured Banner & Custom Image successfully updated on Home screen!');
     setTimeout(() => setSuccessMessage(''), 4000);
   };
 
@@ -90,6 +95,19 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
               ))}
             </select>
           </div>
+
+          <div>
+            <label className="text-[10px] text-gray-400 block mb-1">Custom Banner Image URL (Optional)</label>
+            <input 
+              type="text" 
+              value={customBannerImage}
+              onChange={e => setCustomBannerImage(e.target.value)}
+              placeholder="https://... (Apna khud ka banaya hua banner image link dalein)"
+              className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500"
+            />
+            <p className="text-[9px] text-gray-500 mt-1">Agar yeh khali chhodoge toh story ka apna poster banner par dikhega.</p>
+          </div>
+
           <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl text-xs shadow-lg cursor-pointer">
             ✨ Save Featured Banner
           </button>
@@ -101,7 +119,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
       )}
 
       {activeTab === 'manage' && (
-        <ManageTab stories={stories} />
+        <ManageTab stories={stories} fetchStories={fetchStories} />
       )}
     </div>
   );
