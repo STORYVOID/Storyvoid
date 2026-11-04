@@ -8,8 +8,10 @@ import { ProfileView } from './components/ProfileView';
 import { SearchView } from './components/SearchView';
 import { LibraryView } from './components/LibraryView';
 import { NotificationModal } from './components/NotificationModal';
+import { SplashScreen } from './components/SplashScreen';
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'home' | 'search' | 'library' | 'profile' | 'admin'>('home');
   const [coins, setCoins] = useState<number>(30);
   const [stories, setStories] = useState<any[]>([]);
@@ -60,7 +62,12 @@ export default function App() {
   const genresList = ['All', 'Fantasy', 'Romance', 'Crime', 'Thriller', 'Horror', 'Mystery', 'Action', 'Drama', 'Sci-Fi', 'Comedy'];
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2500);
+
     fetchStories();
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchStories = async () => {
@@ -153,13 +160,11 @@ export default function App() {
     saveListeningHistory(ep);
   };
 
-  // Listening History me episode save karne ka function
   const saveListeningHistory = (ep: any) => {
     try {
       const savedHistory = localStorage.getItem('storyvoid_listening_history');
       let historyList: any[] = savedHistory ? JSON.parse(savedHistory) : [];
 
-      // Pehle se agar wahi episode hai toh use hata kar sabse upar laayein
       historyList = historyList.filter(item => item.id !== ep.id);
       historyList.unshift({
         id: ep.id,
@@ -169,7 +174,6 @@ export default function App() {
         genre: ep.genre,
       });
 
-      // Sirf last 20 history items rakhein
       if (historyList.length > 20) historyList.pop();
 
       localStorage.setItem('storyvoid_listening_history', JSON.stringify(historyList));
@@ -242,6 +246,10 @@ export default function App() {
   const featuredTitle = localStorage.getItem('storyvoid_featured_title');
   const customBannerImg = localStorage.getItem('storyvoid_custom_banner_image');
   const featuredStoryData = uniqueSeriesList.find((s: any) => s.title === featuredTitle);
+
+  if (showSplash) {
+    return <SplashScreen />;
+  }
 
   if (!isLoggedIn) {
     return <AuthScreen onLogin={handleLogin} />;
@@ -346,23 +354,23 @@ export default function App() {
                   <p className="text-xs text-gray-400 mb-2">No series found in this genre.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-3 gap-2.5">
+                <div className="grid grid-cols-2 gap-3">
                   {filteredSeriesList.map((series: any, idx: number) => (
                     <div 
                       key={idx} 
                       onClick={() => setSelectedStoryTitle(series.title)}
-                      className="bg-[#16131c] rounded-xl p-2 border border-gray-800 cursor-pointer hover:border-orange-500 transition-all shadow-md"
+                      className="bg-[#16131c] rounded-xl p-2.5 border border-gray-800 cursor-pointer hover:border-orange-500 transition-all shadow-md"
                     >
                       <img 
                         src={series.poster_url} 
                         alt="Poster" 
-                        className="h-28 w-full object-cover rounded-lg mb-1.5 border border-gray-700" 
+                        className="h-36 w-full object-cover rounded-lg mb-2 border border-gray-700" 
                       />
-                      <span className="text-[8px] bg-orange-900/60 text-orange-300 px-2 py-0.5 rounded-full font-bold inline-block">
+                      <span className="text-[9px] bg-orange-900/60 text-orange-300 px-2.5 py-0.5 rounded-full font-bold inline-block">
                         {series.genre}
                       </span>
-                      <h4 className="text-[11px] font-bold truncate mt-1 text-white">{series.title}</h4>
-                      <p className="text-[9px] text-gray-400">{series.episodesCount} Eps</p>
+                      <h4 className="text-xs font-bold truncate mt-1 text-white">{series.title}</h4>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{series.episodesCount} Episodes</p>
                     </div>
                   ))}
                 </div>
@@ -437,5 +445,5 @@ export default function App() {
       </div>
     </div>
   );
-                                       }
-      
+        }
+    
