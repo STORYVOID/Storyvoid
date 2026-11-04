@@ -468,7 +468,14 @@ export default function App() {
       )}
 
       {activeTab === 'profile' && (
-        <ProfileView userEmail={userEmail} isAdmin={isAdmin} onLogout={handleLogout} />
+        <ProfileView 
+          userEmail={userEmail} 
+          isAdmin={isAdmin} 
+          onLogout={handleLogout}
+          onOpenCoinStore={() => setIsCoinStoreOpen(true)}
+          onWatchAd={watchAdForCoins}
+          coins={coins}
+        />
       )}
 
       {activeTab === 'admin' && isAdmin && (
