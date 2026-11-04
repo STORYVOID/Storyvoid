@@ -85,14 +85,14 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
       <div className="flex justify-between items-center mb-2">
         <button 
           onClick={onBack}
-          className="text-xs text-orange-400 font-bold flex items-center bg-[#16131c] px-3 py-1.5 rounded-lg border border-gray-800 w-fit cursor-pointer hover:border-orange-500 transition-all"
+          className="text-xs text-orange-400 font-bold flex items-center bg-[#16131c] px-3.5 py-2 rounded-xl border border-gray-800 w-fit cursor-pointer hover:border-orange-500 transition-all shadow-md"
         >
           ← Back
         </button>
 
         <button 
           onClick={toggleFollow}
-          className={`text-xs font-bold px-4 py-1.5 rounded-xl border transition-all cursor-pointer shadow-md ${
+          className={`text-xs font-bold px-4 py-2 rounded-xl border transition-all cursor-pointer shadow-md ${
             isFollowed 
               ? 'bg-orange-500 text-white border-orange-500' 
               : 'bg-[#16131c] text-orange-400 border-gray-800 hover:border-orange-500'
@@ -106,14 +106,14 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
         <img 
           src={firstSeries.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400'} 
           alt="Poster" 
-          className="w-24 h-32 object-cover rounded-xl border border-gray-700 shadow-md"
+          className="w-28 h-36 object-cover rounded-xl border border-gray-700 shadow-md"
         />
-        <div className="flex-1">
-          <span className="text-[9px] bg-orange-900/60 text-orange-300 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
-            {firstSeries.genre || 'Thriller'}
+        <div className="flex-1 space-y-1.5">
+          <span className="text-[9px] bg-orange-950 text-orange-300 border border-orange-800/60 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">
+            {firstSeries.genre || 'Fantasy'}
           </span>
-          <h2 className="text-base font-black mt-1 text-white">{firstSeries.title}</h2>
-          <p className="text-[11px] text-gray-400 mt-1 line-clamp-3 leading-relaxed">{firstSeries.description || 'An immersive audio series.'}</p>
+          <h2 className="text-base font-black text-white">{firstSeries.title}</h2>
+          <p className="text-[11px] text-gray-300 line-clamp-3 leading-relaxed">{firstSeries.description || 'An immersive audio series.'}</p>
         </div>
       </div>
 
@@ -137,7 +137,7 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
                   <span className="text-[10px] bg-gray-800 text-gray-300 px-2 py-0.5 rounded font-bold">
                     EP {idx + 1}
                   </span>
-                  <h4 className="text-xs font-bold text-white truncate max-w-[180px] sm:max-w-xs">{ep.episode_title || `Episode ${idx + 1}`}</h4>
+                  <h4 className="text-xs font-bold text-white truncate max-w-[170px] sm:max-w-xs">{ep.episode_title || `Episode ${idx + 1}`}</h4>
                 </div>
                 <p className="text-[10px] font-medium">
                   {price > 0 && !isUnlocked ? (
@@ -195,4 +195,4 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
     </div>
   );
 };
-          
+        
