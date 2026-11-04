@@ -150,6 +150,32 @@ export default function App() {
     setCurrentPlaylist(allSeriesEpisodes);
     setCurrentIndex(index);
     playAudio(ep);
+    saveListeningHistory(ep);
+  };
+
+  // Listening History me episode save karne ka function
+  const saveListeningHistory = (ep: any) => {
+    try {
+      const savedHistory = localStorage.getItem('storyvoid_listening_history');
+      let historyList: any[] = savedHistory ? JSON.parse(savedHistory) : [];
+
+      // Pehle se agar wahi episode hai toh use hata kar sabse upar laayein
+      historyList = historyList.filter(item => item.id !== ep.id);
+      historyList.unshift({
+        id: ep.id,
+        title: ep.title,
+        episode_title: ep.episode_title,
+        poster_url: ep.poster_url,
+        genre: ep.genre,
+      });
+
+      // Sirf last 20 history items rakhein
+      if (historyList.length > 20) historyList.pop();
+
+      localStorage.setItem('storyvoid_listening_history', JSON.stringify(historyList));
+    } catch (err) {
+      console.error('Error saving history:', err);
+    }
   };
 
   const playAudio = (ep: any) => {
@@ -411,5 +437,5 @@ export default function App() {
       </div>
     </div>
   );
-        }
-                    
+                                       }
+      
