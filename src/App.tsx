@@ -6,6 +6,7 @@ import { AudioPlayer } from './components/AudioPlayer';
 import { EpisodeList } from './components/EpisodeList';
 import { ProfileView } from './components/ProfileView';
 import { SearchView } from './components/SearchView';
+import { LibraryView } from './components/LibraryView';
 import { NotificationModal } from './components/NotificationModal';
 
 export default function App() {
@@ -356,10 +357,13 @@ export default function App() {
       )}
 
       {activeTab === 'library' && (
-        <div className="p-4">
-          <h2 className="text-lg font-bold text-orange-500 mb-1">Your Library</h2>
-          <p className="text-xs text-gray-400">No saved stories yet.</p>
-        </div>
+        <LibraryView 
+          stories={stories}
+          unlockedEpisodes={unlockedEpisodes}
+          coins={coins}
+          onEpisodeAction={handleEpisodeAction}
+          onUnlockEpisode={handleUnlockEpisode}
+        />
       )}
 
       {activeTab === 'profile' && (
@@ -407,5 +411,5 @@ export default function App() {
       </div>
     </div>
   );
-          }
-                          
+        }
+                    
