@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
 
 interface AddEpisodeTabProps {
@@ -17,6 +17,16 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
 
   const uniqueSeriesList = Array.from(new Set(stories.map(s => s.title)));
 
+  // Jaise hi admin koi story select karega, yeh automatically count karke agla episode number set kar dega
+  useEffect(() => {
+    if (selectedStoryTitle) {
+      const existingEpisodesCount = stories.filter(s => s.title === selectedStoryTitle).length;
+      setEpisodeNumber(String(existingEpisodesCount + 1));
+    } else {
+      setEpisodeNumber('1');
+    }
+  }, [selectedStoryTitle, stories]);
+
   const handleAddEpisode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedStoryTitle || !episodeTitle || !audioUrl) {
@@ -28,7 +38,6 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
       setUploading(true);
       const selectedStoryRef = stories.find(s => s.title === selectedStoryTitle);
 
-      // Agar user ne title me pehle se "Episode X" likha hai toh duplicate na ho, seedha clean format save ho
       const cleanTitle = episodeTitle.replace(/^episode\s*\d+[:\s]*/i, '').trim();
       const formattedEpisodeTitle = `Episode ${episodeNumber}: ${cleanTitle}`;
 
@@ -47,7 +56,6 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
       if (error) throw error;
 
       setSuccessMessage('🎉 Episode successfully published!');
-      setEpisodeNumber(String(Number(episodeNumber) + 1));
       setEpisodeTitle('');
       setAudioUrl('');
       fetchStories();
@@ -81,13 +89,12 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
       </div>
 
       <div>
-        <label className="text-[10px] text-gray-400 block mb-1">Episode Number (e.g. 1, 2, 3)</label>
+        <label className="text-[10px] text-gray-400 block mb-1">Episode Number (Auto-calculated)</label>
         <input 
           type="number" 
           value={episodeNumber} 
           onChange={e => setEpisodeNumber(e.target.value)}
-          placeholder="1" 
-          className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500"
+          className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500 text-orange-400 font-bold"
           required
         />
       </div>
