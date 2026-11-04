@@ -13,17 +13,24 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
   const [episodeTitle, setEpisodeTitle] = useState('');
   const [coinPrice, setCoinPrice] = useState('10');
   const [audioUrl, setAudioUrl] = useState('');
+  const [customPosterUrl, setCustomPosterUrl] = useState('');
   const [uploading, setUploading] = useState(false);
 
   const uniqueSeriesList = Array.from(new Set(stories.map(s => s.title)));
 
-  // Jaise hi admin koi story select karega, yeh automatically count karke agla episode number set kar dega
   useEffect(() => {
     if (selectedStoryTitle) {
       const existingEpisodesCount = stories.filter(s => s.title === selectedStoryTitle).length;
       setEpisodeNumber(String(existingEpisodesCount + 1));
+      
+      // Agar pehle se koi poster hai is series ka toh use default me utha lo
+      const foundStory = stories.find(s => s.title === selectedStoryTitle);
+      if (foundStory?.poster_url) {
+        setCustomPosterUrl(foundStory.poster_url);
+      }
     } else {
       setEpisodeNumber('1');
+      setCustomPosterUrl('');
     }
   }, [selectedStoryTitle, stories]);
 
@@ -49,13 +56,13 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
           audio_url: audioUrl,
           genre: selectedStoryRef?.genre || 'Thriller',
           description: selectedStoryRef?.description || '',
-          poster_url: selectedStoryRef?.poster_url || ''
+          poster_url: customPosterUrl || selectedStoryRef?.poster_url || ''
         }
       ]);
 
       if (error) throw error;
 
-      setSuccessMessage('🎉 Episode successfully published!');
+      setSuccessMessage('🎉 Episode & Poster successfully published!');
       setEpisodeTitle('');
       setAudioUrl('');
       fetchStories();
@@ -63,7 +70,7 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
       setTimeout(() => setSuccessMessage(''), 4000);
     } catch (err: any) {
       console.error('Error adding episode:', err);
-      alert(`❌ Error adding episode: ${err.message || 'Unknown error'}`);
+      alert(`❌ Error: ${err.message || 'Unknown error'}`);
     } finally {
       setUploading(false);
     }
@@ -71,7 +78,7 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
 
   return (
     <form onSubmit={handleAddEpisode} className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 space-y-4 shadow-lg">
-      <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">Publish Episode to Series</h3>
+      <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">Publish Episode & Custom Poster</h3>
 
       <div>
         <label className="text-[10px] text-gray-400 block mb-1">Select Story Series</label>
@@ -100,7 +107,7 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
       </div>
 
       <div>
-        <label className="text-[10px] text-gray-400 block mb-1">Episode Title / Name (e.g. Pilot, Runnn)</label>
+        <label className="text-[10px] text-gray-400 block mb-1">Episode Title / Name</label>
         <input 
           type="text" 
           value={episodeTitle} 
@@ -108,6 +115,17 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
           placeholder="e.g. Pilot" 
           className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500"
           required
+        />
+      </div>
+
+      <div>
+        <label className="text-[10px] text-gray-400 block mb-1">Personal Custom Poster URL</label>
+        <input 
+          type="text" 
+          value={customPosterUrl} 
+          onChange={e => setCustomPosterUrl(e.target.value)}
+          placeholder="https://... (Apna personal poster link dalein)" 
+          className="w-full bg-[#0f0d13] border border-gray-800 rounded-xl p-3 text-xs text-white outline-none focus:border-orange-500"
         />
       </div>
 
@@ -144,4 +162,4 @@ export const AddEpisodeTab: React.FC<AddEpisodeTabProps> = ({ stories, fetchStor
     </form>
   );
 };
-    
+                  
