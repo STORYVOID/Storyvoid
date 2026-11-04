@@ -271,22 +271,22 @@ export default function App() {
               {featuredStoryData && (
                 <div 
                   onClick={() => setSelectedStoryTitle(featuredStoryData.title)}
-                  className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 bg-[#16131c] p-4 flex gap-4 items-center cursor-pointer shadow-xl group hover:border-orange-500 transition-all"
+                  className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 h-44 flex flex-col justify-end p-4 cursor-pointer shadow-xl group hover:border-orange-500 transition-all bg-cover bg-center"
+                  style={{ backgroundImage: `url(${customBannerImg || featuredStoryData.poster_url})` }}
                 >
-                  <img 
-                    src={customBannerImg || featuredStoryData.poster_url} 
-                    alt="Featured Banner" 
-                    className="w-24 h-32 object-cover rounded-xl border border-gray-700 shadow-md group-hover:scale-105 transition-all"
-                  />
-                  <div className="flex-1 space-y-1.5">
-                    <span className="text-[9px] bg-orange-500 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0f0d13] via-[#0f0d13]/70 to-transparent"></div>
+                  
+                  <div className="relative z-10 space-y-1">
+                    <span className="text-[9px] bg-orange-500 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">
                       🔥 Trending & Featured
                     </span>
-                    <h3 className="text-sm font-black text-white">{featuredStoryData.title}</h3>
-                    <p className="text-[10px] text-gray-300 line-clamp-2 leading-relaxed">{featuredStoryData.description || 'Listen to this amazing audio series now.'}</p>
-                    <button className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-1.5 rounded-xl text-[11px] shadow-md transition-all cursor-pointer mt-1">
-                      ✨ Play Now
-                    </button>
+                    <h3 className="text-base font-black text-white">{featuredStoryData.title}</h3>
+                    <p className="text-[10px] text-gray-300 line-clamp-1 leading-relaxed">{featuredStoryData.description || 'Listen to this amazing audio series now.'}</p>
+                    <div className="pt-1">
+                      <span className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-1.5 rounded-xl text-[11px] shadow-md transition-all inline-block">
+                        ✨ Play Now
+                      </span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -330,7 +330,7 @@ export default function App() {
                         alt="Poster" 
                         className="h-36 w-full object-cover rounded-lg mb-2 border border-gray-700" 
                       />
-                      <span className="text-[9px] bg-orange-900/60 text-orange-300 px-2 py-0.5 rounded-full font-bold">
+                      <span className="text-[9px] bg-orange-900/60 text-orange-300 px-2.5 py-0.5 rounded-full font-bold">
                         {series.genre}
                       </span>
                       <h4 className="text-xs font-bold truncate mt-1 text-white">{series.title}</h4>
@@ -407,4 +407,4 @@ export default function App() {
       </div>
     </div>
   );
-                              }
+}
