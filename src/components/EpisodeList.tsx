@@ -81,7 +81,7 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
   };
 
   return (
-    <div className="space-y-4 max-w-xl mx-auto pb-20 relative p-4">
+    <div className="space-y-4 w-full px-3 sm:px-4 pb-20 relative">
       <div className="flex justify-between items-center mb-2">
         <button 
           onClick={onBack}
@@ -102,12 +102,12 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
         </button>
       </div>
 
-      {/* Story details header - Side by side layout restored */}
-      <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 flex gap-4 items-center shadow-lg">
+      {/* Story details header - Full width comfortable layout */}
+      <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 flex gap-4 items-center shadow-lg w-full">
         <img 
           src={firstSeries.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400'} 
           alt="Poster" 
-          className="w-24 h-32 object-cover rounded-xl border border-gray-700 shadow-md shrink-0"
+          className="w-28 h-36 object-cover rounded-xl border border-gray-700 shadow-md shrink-0"
         />
         <div className="flex-1 space-y-1.5 overflow-hidden">
           <span className="text-[9px] bg-orange-950 text-orange-300 border border-orange-800/60 px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">
@@ -118,12 +118,12 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
         </div>
       </div>
 
-      <div className="flex justify-between items-center mt-6 mb-2">
+      <div className="flex justify-between items-center mt-6 mb-2 px-1">
         <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">Episodes Playlist</h3>
         <span className="text-[10px] text-gray-500">{seriesStories.length} Episodes Available</span>
       </div>
 
-      <div className="space-y-2.5">
+      <div className="space-y-2.5 w-full">
         {seriesStories.map((ep, idx) => {
           const price = Number(ep.coin_price) || 0;
           const isUnlocked = price === 0 || unlockedEpisodes[ep.id];
@@ -131,14 +131,14 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
           return (
             <div 
               key={ep.id || idx} 
-              className={`p-3.5 rounded-xl border transition-all flex justify-between items-center ${isUnlocked ? 'bg-[#16131c] border-gray-800 hover:border-orange-500/50' : 'bg-[#131117] border-gray-800/80 opacity-90'}`}
+              className={`p-3.5 rounded-xl border transition-all flex justify-between items-center w-full ${isUnlocked ? 'bg-[#16131c] border-gray-800 hover:border-orange-500/50' : 'bg-[#131117] border-gray-800/80 opacity-90'}`}
             >
-              <div className="space-y-1 pr-2">
+              <div className="space-y-1 pr-2 flex-1 min-w-0">
                 <div className="flex items-center space-x-2">
-                  <span className="text-[10px] bg-gray-800 text-gray-300 px-2 py-0.5 rounded font-bold">
+                  <span className="text-[10px] bg-gray-800 text-gray-300 px-2 py-0.5 rounded font-bold shrink-0">
                     EP {idx + 1}
                   </span>
-                  <h4 className="text-xs font-bold text-white truncate max-w-[170px] sm:max-w-xs">{ep.episode_title || `Episode ${idx + 1}`}</h4>
+                  <h4 className="text-xs font-bold text-white truncate">{ep.episode_title || `Episode ${idx + 1}`}</h4>
                 </div>
                 <p className="text-[10px] font-medium">
                   {price > 0 && !isUnlocked ? (
@@ -151,7 +151,7 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
 
               <button 
                 onClick={() => handleItemClick(ep, seriesStories, idx)}
-                className={`text-[11px] font-bold px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1 whitespace-nowrap ${
+                className={`text-[11px] font-bold px-4 py-2 rounded-xl transition-all shadow-md cursor-pointer flex items-center gap-1 whitespace-nowrap shrink-0 ${
                   price > 0 && !isUnlocked 
                     ? 'bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white' 
                     : 'bg-orange-500 hover:bg-orange-600 text-white'
@@ -196,4 +196,4 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
     </div>
   );
 };
-                  
+    
