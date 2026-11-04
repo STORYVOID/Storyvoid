@@ -15,7 +15,6 @@ export default function App() {
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
   const [selectedGenreFilter, setSelectedGenreFilter] = useState<string>('All');
 
-  // Custom Notification Modal State
   const [modalConfig, setModalConfig] = useState<{ isOpen: boolean; title: string; message: string; isSuccess: boolean }>({
     isOpen: false,
     title: '',
@@ -27,7 +26,6 @@ export default function App() {
     setModalConfig({ isOpen: true, title, message, isSuccess });
   };
 
-  // Audio Player & Unlocked Episodes State with localStorage persistence
   const [currentPlayingEpisode, setCurrentPlayingEpisode] = useState<any>(null);
   const [currentPlaylist, setCurrentPlaylist] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -44,7 +42,6 @@ export default function App() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Authentication State with localStorage
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('storyvoid_logged_in') === 'true';
   });
@@ -215,6 +212,7 @@ export default function App() {
     : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
 
   const featuredTitle = localStorage.getItem('storyvoid_featured_title');
+  const customBannerImg = localStorage.getItem('storyvoid_custom_banner_image');
   const featuredStoryData = uniqueSeriesList.find((s: any) => s.title === featuredTitle);
 
   if (!isLoggedIn) {
@@ -276,7 +274,7 @@ export default function App() {
                   className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 bg-[#16131c] p-4 flex gap-4 items-center cursor-pointer shadow-xl group hover:border-orange-500 transition-all"
                 >
                   <img 
-                    src={featuredStoryData.poster_url} 
+                    src={customBannerImg || featuredStoryData.poster_url} 
                     alt="Featured Banner" 
                     className="w-24 h-32 object-cover rounded-xl border border-gray-700 shadow-md group-hover:scale-105 transition-all"
                   />
@@ -409,5 +407,4 @@ export default function App() {
       </div>
     </div>
   );
-    }
-                  
+                              }
