@@ -97,7 +97,7 @@ export default function App() {
 
   const fetchUserCoins = async (email: string) => {
     try {
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('app_users')
         .select('coins')
         .eq('email', email)
@@ -111,15 +111,15 @@ export default function App() {
     }
   };
 
+  // .update() ki jagah .upsert() use kiya hai taaki coins database me hamesha successfully save ho jayein
   const updateUserCoinsInDB = async (newCoins: number, email: string) => {
     try {
       const { error } = await supabase
         .from('app_users')
-        .update({ coins: newCoins })
-        .eq('email', email);
+        .upsert({ email: email, coins: newCoins }, { onConflict: 'email' });
 
       if (error) {
-        console.error('Error updating coins in DB:', error.message);
+        console.error('Error saving coins in DB:', error.message);
       }
     } catch (err) {
       console.error('Error updating coins in DB:', err);
@@ -212,7 +212,7 @@ export default function App() {
     const updatedCoins = coins - price;
     setCoins(updatedCoins);
     
-    // Database me turant coins update karo taaki refresh karne par wapas na aayein
+    // Database me turant coins update/upsert karo taaki refresh karne par wapas na aayein
     if (userEmail) {
       await updateUserCoinsInDB(updatedCoins, userEmail);
     }
@@ -492,8 +492,8 @@ export default function App() {
                         {series.genre}
                       </span>
                       <h4 className="text-xs font-bold truncate mt-1 text-white">{series.title}</h4>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{series.episodesCount} Episodes</p> 
-                                          </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{series.episodesCount} Episodes</p>
+                    </div>
                   ))}
                 </div>
               )}
@@ -574,4 +574,4 @@ export default function App() {
       </div>
     </div>
   );
-}
+          }
