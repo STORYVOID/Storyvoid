@@ -47,7 +47,6 @@ export default function App() {
     return localStorage.getItem('storyvoid_is_admin') === 'true';
   });
 
-  // User-specific unlocked episodes load karo
   const [unlockedEpisodes, setUnlockedEpisodes] = useState<Record<string, boolean>>(() => {
     try {
       const email = localStorage.getItem('storyvoid_email') || '';
@@ -73,7 +72,6 @@ export default function App() {
     fetchStories();
     if (userEmail) {
       fetchUserCoins(userEmail);
-      // Load specific user unlocks
       const saved = localStorage.getItem(`storyvoid_unlocked_${userEmail}`);
       setUnlockedEpisodes(saved ? JSON.parse(saved) : {});
     }
@@ -99,11 +97,11 @@ export default function App() {
 
   const fetchUserCoins = async (email: string) => {
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('app_users')
         .select('coins')
         .eq('email', email)
-        .single();
+        .maybeSingle();
       
       if (data && data.coins !== undefined) {
         setCoins(data.coins);
@@ -115,10 +113,14 @@ export default function App() {
 
   const updateUserCoinsInDB = async (newCoins: number, email: string) => {
     try {
-      await supabase
+      const { error } = await supabase
         .from('app_users')
         .update({ coins: newCoins })
         .eq('email', email);
+
+      if (error) {
+        console.error('Error updating coins in DB:', error.message);
+      }
     } catch (err) {
       console.error('Error updating coins in DB:', err);
     }
@@ -137,7 +139,7 @@ export default function App() {
         .from('app_users')
         .select('coins')
         .eq('email', cleanEmail)
-        .single();
+        .maybeSingle();
 
       const initialCoins = existingUser?.coins ?? 30;
 
@@ -150,7 +152,6 @@ export default function App() {
       console.error('Error saving user to DB:', err);
     }
 
-    // Load user specific unlocked episodes on login
     const savedUnlocked = localStorage.getItem(`storyvoid_unlocked_${cleanEmail}`);
     setUnlockedEpisodes(savedUnlocked ? JSON.parse(savedUnlocked) : {});
 
@@ -211,6 +212,7 @@ export default function App() {
     const updatedCoins = coins - price;
     setCoins(updatedCoins);
     
+    // Database me turant coins update karo taaki refresh karne par wapas na aayein
     if (userEmail) {
       await updateUserCoinsInDB(updatedCoins, userEmail);
     }
@@ -490,8 +492,8 @@ export default function App() {
                         {series.genre}
                       </span>
                       <h4 className="text-xs font-bold truncate mt-1 text-white">{series.title}</h4>
-                      <p className="text-[10px] text-gray-400 mt-0.5">{series.episodesCount} Episodes</p>
-                    </div>
+                      <p className="text-[10px] text-gray-400 mt-0.5">{series.episodesCount} Episodes</p> 
+                                          </div>
                   ))}
                 </div>
               )}
@@ -501,7 +503,7 @@ export default function App() {
       )}
 
       {activeTab === 'search' && (
-   <SearchView 
+        <SearchView 
           stories={stories}
           unlockedEpisodes={unlockedEpisodes}
           coins={coins}
@@ -572,4 +574,4 @@ export default function App() {
       </div>
     </div>
   );
-          }
+}
