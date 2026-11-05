@@ -8,7 +8,7 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, setSuccessMessage }) => {
-  const [activeAdminTab, setActiveAdminTab] = useState<'episode' | 'story' | 'banner' | 'promo'>('episode');
+  const [activeAdminTab, setActiveAdminTab] = useState<'episode' | 'story' | 'banner' | 'promo' | 'users'>('episode');
 
   // Episode form state
   const [title, setTitle] = useState('');
@@ -86,11 +86,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
     <div className="space-y-4 max-w-xl mx-auto px-2">
       <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 text-center shadow-lg">
         <h2 className="text-sm font-black text-orange-500 uppercase tracking-wider">🛠️ ADMIN COMMAND CENTER</h2>
-        <p className="text-[10px] text-gray-400 mt-0.5">Manage your audio series and promotional banners</p>
+        <p className="text-[10px] text-gray-400 mt-0.5">Manage your audio series, featured banners & promotional ads</p>
       </div>
 
-      {/* Tabs list with clean spacing and no overlapping text */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         <button 
           onClick={() => setActiveAdminTab('episode')} 
           className={`py-2 px-2 rounded-xl text-[11px] font-bold cursor-pointer transition-all text-center ${activeAdminTab === 'episode' ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}
@@ -101,7 +100,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
           onClick={() => setActiveAdminTab('story')} 
           className={`py-2 px-2 rounded-xl text-[11px] font-bold cursor-pointer transition-all text-center ${activeAdminTab === 'story' ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}
         >
-          + New Story
+          + Story
         </button>
         <button 
           onClick={() => setActiveAdminTab('banner')} 
@@ -114,6 +113,12 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
           className={`py-2 px-2 rounded-xl text-[11px] font-bold cursor-pointer transition-all text-center ${activeAdminTab === 'promo' ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}
         >
           📢 Promo Ads
+        </button>
+        <button 
+          onClick={() => setActiveAdminTab('users')} 
+          className={`py-2 px-2 rounded-xl text-[11px] font-bold cursor-pointer transition-all text-center ${activeAdminTab === 'users' ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}
+        >
+          👥 Users
         </button>
       </div>
 
@@ -245,6 +250,17 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
           </button>
         </form>
       )}
+
+      {activeAdminTab === 'users' && (
+        <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 space-y-3 shadow-lg">
+          <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wide">👥 Registered Users Management</h3>
+          <p className="text-[11px] text-gray-400">Here you can view and manage registered app listeners and their coin balances.</p>
+          <div className="bg-[#121017] p-3 rounded-xl border border-gray-800 text-center text-xs text-gray-400">
+            System users are synced with Supabase database securely.
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+    
