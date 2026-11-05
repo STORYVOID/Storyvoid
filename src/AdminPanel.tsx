@@ -29,6 +29,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
   const [promoMediaUrl, setPromoMediaUrl] = useState(localStorage.getItem('storyvoid_promo_media') || '');
   const [promoLink, setPromoLink] = useState(localStorage.getItem('storyvoid_promo_link') || '');
 
+  const genresList = ['Fantasy', 'Romance', 'Crime', 'Thriller', 'Horror', 'Mystery', 'Action', 'Drama', 'Sci-Fi', 'Comedy'];
+
   const handleAddEpisode = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !episodeTitle || !audioUrl) {
@@ -89,7 +91,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
         <p className="text-[10px] text-gray-400 mt-0.5">Manage your audio series, featured banners & promotional ads</p>
       </div>
 
-      {/* Horizontally scrollable clean tabs bar to prevent any text clipping */}
       <div className="flex overflow-x-auto space-x-2 pb-1 scrollbar-none">
         <button 
           onClick={() => setActiveAdminTab('episode')} 
@@ -169,12 +170,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
             <div>
               <label className="text-[10px] text-gray-400">Genre</label>
               <select value={genre} onChange={e => setGenre(e.target.value)} className="w-full bg-[#121017] border border-gray-800 rounded-xl p-2.5 text-xs text-white outline-none mt-1">
-                <option value="Fantasy">Fantasy</option>
-                <option value="Romance">Romance</option>
-                <option value="Crime">Crime</option>
-                <option value="Thriller">Thriller</option>
-                <option value="Horror">Horror</option>
-                <option value="Action">Action</option>
+                {genresList.map((g, idx) => (
+                  <option key={idx} value={g}>{g}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -265,4 +263,4 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
     </div>
   );
 };
-                                       
+            
