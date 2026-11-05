@@ -37,17 +37,6 @@ export default function App() {
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   
-  const [unlockedEpisodes, setUnlockedEpisodes] = useState<Record<string, boolean>>(() => {
-    try {
-      const saved = localStorage.getItem('storyvoid_unlocked');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
     return localStorage.getItem('storyvoid_logged_in') === 'true';
   });
@@ -57,6 +46,19 @@ export default function App() {
   const [isAdmin, setIsAdmin] = useState(() => {
     return localStorage.getItem('storyvoid_is_admin') === 'true';
   });
+
+  // User-specific unlocked episodes load karo
+  const [unlockedEpisodes, setUnlockedEpisodes] = useState<Record<string, boolean>>(() => {
+    try {
+      const email = localStorage.getItem('storyvoid_email') || '';
+      const saved = localStorage.getItem(`storyvoid_unlocked_${email}`);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const ADMIN_EMAIL = 'storyvoid.admin@gmail.com';
   const ADMIN_PASSWORD = 'VoidAdmin#2026';
@@ -71,6 +73,9 @@ export default function App() {
     fetchStories();
     if (userEmail) {
       fetchUserCoins(userEmail);
+      // Load specific user unlocks
+      const saved = localStorage.getItem(`storyvoid_unlocked_${userEmail}`);
+      setUnlockedEpisodes(saved ? JSON.parse(saved) : {});
     }
     return () => clearTimeout(timer);
   }, [userEmail]);
@@ -145,6 +150,10 @@ export default function App() {
       console.error('Error saving user to DB:', err);
     }
 
+    // Load user specific unlocked episodes on login
+    const savedUnlocked = localStorage.getItem(`storyvoid_unlocked_${cleanEmail}`);
+    setUnlockedEpisodes(savedUnlocked ? JSON.parse(savedUnlocked) : {});
+
     if (cleanEmail === ADMIN_EMAIL) {
       if (pass !== ADMIN_PASSWORD) {
         showAppAlert('Access Denied', 'Incorrect Admin Password!', false);
@@ -169,6 +178,7 @@ export default function App() {
     setIsAdmin(false);
     setUserEmail('');
     setActiveTab('home');
+    setUnlockedEpisodes({});
     setCurrentPlayingEpisode(null);
     localStorage.removeItem('storyvoid_logged_in');
     localStorage.removeItem('storyvoid_email');
@@ -201,14 +211,15 @@ export default function App() {
     const updatedCoins = coins - price;
     setCoins(updatedCoins);
     
-    // Database me coins update kar diya taaki refresh karne par wapas na aayein
     if (userEmail) {
       await updateUserCoinsInDB(updatedCoins, userEmail);
     }
     
     const newUnlocked = { ...unlockedEpisodes, [ep.id]: true };
     setUnlockedEpisodes(newUnlocked);
-    localStorage.setItem('storyvoid_unlocked', JSON.stringify(newUnlocked));
+    if (userEmail) {
+      localStorage.setItem(`storyvoid_unlocked_${userEmail}`, JSON.stringify(newUnlocked));
+    }
     return true;
   };
 
@@ -490,7 +501,7 @@ export default function App() {
       )}
 
       {activeTab === 'search' && (
-        <SearchView 
+   <SearchView 
           stories={stories}
           unlockedEpisodes={unlockedEpisodes}
           coins={coins}
@@ -507,7 +518,7 @@ export default function App() {
           onEpisodeAction={handleEpisodeAction}
           onUnlockEpisode={handleUnlockEpisode}
         />
-    )}
+      )}
 
       {activeTab === 'profile' && (
         <ProfileView 
@@ -561,4 +572,4 @@ export default function App() {
       </div>
     </div>
   );
-        }
+          }
