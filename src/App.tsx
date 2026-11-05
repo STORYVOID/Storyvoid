@@ -175,33 +175,35 @@ export default function App() {
     localStorage.removeItem('storyvoid_is_admin');
   };
 
-  const watchAdForCoins = () => {
+  const watchAdForCoins = async () => {
     const updatedCoins = coins + 20;
     setCoins(updatedCoins);
     if (userEmail) {
-      updateUserCoinsInDB(updatedCoins, userEmail);
+      await updateUserCoinsInDB(updatedCoins, userEmail);
     }
     showAppAlert('Coins Added', '🎉 Ad watched successfully! +20 coins added to your wallet.');
   };
 
-  const handleBuyCoins = (coinsToAdd: number, amount: number) => {
+  const handleBuyCoins = async (coinsToAdd: number, amount: number) => {
     const updatedCoins = coins + coinsToAdd;
     setCoins(updatedCoins);
     if (userEmail) {
-      updateUserCoinsInDB(updatedCoins, userEmail);
+      await updateUserCoinsInDB(updatedCoins, userEmail);
     }
     showAppAlert('Coins Added', `🎉 Successfully purchased ${coinsToAdd} coins for ₹${amount}!`);
   };
 
-  const handleUnlockEpisode = (ep: any, price: number) => {
+  const handleUnlockEpisode = async (ep: any, price: number) => {
     if (coins < price) {
       showAppAlert('Insufficient Coins', `❌ You need ${price} coins to unlock this episode. Watch an ad or buy coins from store!`, false);
       return false;
     }
     const updatedCoins = coins - price;
     setCoins(updatedCoins);
+    
+    // Database me coins update kar diya taaki refresh karne par wapas na aayein
     if (userEmail) {
-      updateUserCoinsInDB(updatedCoins, userEmail);
+      await updateUserCoinsInDB(updatedCoins, userEmail);
     }
     
     const newUnlocked = { ...unlockedEpisodes, [ep.id]: true };
@@ -300,12 +302,10 @@ export default function App() {
     ? uniqueSeriesList 
     : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
 
-  // Featured story data
   const featuredTitle = localStorage.getItem('storyvoid_featured_title');
   const customBannerImg = localStorage.getItem('storyvoid_custom_banner_image');
   const featuredStoryData = uniqueSeriesList.find((s: any) => s.title === featuredTitle);
 
-  // Promo / Social Ad Banner data (Naya system)
   const promoTitle = localStorage.getItem('storyvoid_promo_title');
   const promoMedia = localStorage.getItem('storyvoid_promo_media');
   const promoLink = localStorage.getItem('storyvoid_promo_link');
@@ -377,7 +377,6 @@ export default function App() {
                 ))}
               </div>
 
-              {/* Promo Ad Banner (Agar admin ne set kiya hai toh pehle yeh chalega, warna featured story) */}
               {promoMedia ? (
                 <div 
                   onClick={() => {
@@ -508,7 +507,7 @@ export default function App() {
           onEpisodeAction={handleEpisodeAction}
           onUnlockEpisode={handleUnlockEpisode}
         />
-      )}
+    )}
 
       {activeTab === 'profile' && (
         <ProfileView 
@@ -562,4 +561,4 @@ export default function App() {
       </div>
     </div>
   );
-}
+        }
