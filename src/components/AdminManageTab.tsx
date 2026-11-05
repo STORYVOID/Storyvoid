@@ -10,17 +10,23 @@ interface AdminManageTabProps {
 export const AdminManageTab: React.FC<AdminManageTabProps> = ({ stories, fetchStories, setSuccessMessage }) => {
   const [selectedSeriesTitle, setSelectedSeriesTitle] = useState<string | null>(null);
   const [editingStory, setEditingStory] = useState<any | null>(null);
+  const [editingEpisode, setEditingEpisode] = useState<any | null>(null);
   
-  // Edit form state
+  // Story Edit form state
   const [newTitle, setNewTitle] = useState('');
   const [newGenre, setNewGenre] = useState('Fantasy');
   const [newDescription, setNewDescription] = useState('');
   const [newPosterUrl, setNewPosterUrl] = useState('');
+
+  // Episode Edit form state
+  const [newEpTitle, setNewEpTitle] = useState('');
+  const [newAudioUrl, setNewAudioUrl] = useState('');
+  const [newCoinPrice, setNewCoinPrice] = useState('0');
+
   const [loading, setLoading] = useState(false);
 
   const genresList = ['Fantasy', 'Romance', 'Crime', 'Thriller', 'Horror', 'Mystery', 'Action', 'Drama', 'Sci-Fi', 'Comedy'];
 
-  // Group stories by Series Title
   const uniqueSeriesMap = new Map();
   stories.forEach(item => {
     if (item.title && !uniqueSeriesMap.has(item.title)) {
@@ -52,7 +58,6 @@ export const AdminManageTab: React.FC<AdminManageTabProps> = ({ stories, fetchSt
 
     try {
       setLoading(true);
-      // Supabase me us series ke saare episodes ka title, genre, description, poster update kar do
       const { error } = await supabase
         .from('stories')
         .update({
@@ -76,6 +81,40 @@ export const AdminManageTab: React.FC<AdminManageTabProps> = ({ stories, fetchSt
     }
   };
 
+  const handleOpenEditEpisode = (ep: any) => {
+    setEditingEpisode(ep);
+    setNewEpTitle(ep.episode_title || '');
+    setNewAudioUrl(ep.audio_url || '');
+    setNewCoinPrice(String(ep.coin_price || 0));
+  };
+
+  const handleUpdateEpisode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingEpisode) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('stories')
+        .update({
+          episode_title: newEpTitle,
+          audio_url: newAudioUrl,
+          coin_price: parseInt(newCoinPrice) || 0
+        })
+        .eq('id', editingEpisode.id);
+
+      if (error) throw error;
+
+      setSuccessMessage('Episode updated successfully!');
+      setEditingEpisode(null);
+      fetchStories();
+    } catch (err: any) {
+      alert('Error updating episode: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteEpisode = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this episode?')) return;
     try {
@@ -93,7 +132,7 @@ export const AdminManageTab: React.FC<AdminManageTabProps> = ({ stories, fetchSt
       <div className="flex justify-between items-center border-b border-gray-800 pb-3">
         <div>
           <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wide">⚙️ Manage Stories & Episodes</h3>
-          <p className="text-[10px] text-gray-400 mt-0.5">Edit story details or manage episodes</p>
+          <p className="text-[10px] text-gray-400 mt-0.5">Edit story details or manage/edit episodes</p>
         </div>
         <button 
           onClick={fetchStories}
@@ -107,7 +146,7 @@ export const AdminManageTab: React.FC<AdminManageTabProps> = ({ stories, fetchSt
         <form onSubmit={handleUpdateStory} className="space-y-3 bg-[#121017] p-3.5 rounded-xl border border-gray-800">
           <div className="flex justify-between items-center">
             <h4 className="text-xs font-bold text-orange-400">✏️ Edit Story: {editingStory.title}</h4>
-            <button type="button" onClick={() => setEditingStory(null)} className="text-gray-400 hover:text-white text-xs font-bold">✕ Cancel</button>
+            <button type="button" onClick={() => setEditingStory(null)} className="text-gray-400 hover:text-white text-xs font-bold cursor-pointer">✕ Cancel</button>
           </div>
 
           <div>
@@ -137,6 +176,32 @@ export const AdminManageTab: React.FC<AdminManageTabProps> = ({ stories, fetchSt
             {loading ? 'Saving...' : '💾 Save Changes'}
           </button>
         </form>
+      ) : editingEpisode ? (
+        <form onSubmit={handleUpdateEpisode} className="space-y-3 bg-[#121017] p-3.5 rounded-xl border border-gray-800">
+          <div className="flex justify-between items-center">
+            <h4 className="text-xs font-bold text-orange-400">✏️ Edit Episode</h4>
+            <button type="button" onClick={() => setEditingEpisode(null)} className="text-gray-400 hover:text-white text-xs font-bold cursor-pointer">✕ Cancel</button>
+          </div>
+
+          <div>
+            <label className="text-[10px] text-gray-400">Episode Title</label>
+            <input type="text" value={newEpTitle} onChange={e => setNewEpTitle(e.target.value)} className="w-full bg-[#16131c] border border-gray-800 rounded-xl p-2.5 text-xs text-white outline-none mt-1" required />
+          </div>
+
+          <div>
+            <label className="text-[10px] text-gray-400">Audio Stream / MP3 URL</label>
+            <input type="text" value={newAudioUrl} onChange={e => setNewAudioUrl(e.target.value)} className="w-full bg-[#16131c] border border-gray-800 rounded-xl p-2.5 text-xs text-white outline-none mt-1" required />
+          </div>
+
+          <div>
+            <label className="text-[10px] text-gray-400">Coin Price (0 for Free)</label>
+            <input type="number" value={newCoinPrice} onChange={e => setNewCoinPrice(e.target.value)} className="w-full bg-[#16131c] border border-gray-800 rounded-xl p-2.5 text-xs text-white outline-none mt-1" />
+          </div>
+
+          <button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs shadow-lg cursor-pointer transition-all">
+            {loading ? 'Saving...' : '💾 Save Episode'}
+          </button>
+        </form>
       ) : selectedSeriesTitle ? (
         <div className="space-y-3">
           <div className="flex justify-between items-center bg-[#121017] p-3 rounded-xl border border-gray-800">
@@ -153,12 +218,20 @@ export const AdminManageTab: React.FC<AdminManageTabProps> = ({ stories, fetchSt
                   <p className="font-bold text-white truncate">{ep.episode_title}</p>
                   <p className="text-[9px] text-orange-400 mt-0.5">Coins: {ep.coin_price || 0}</p>
                 </div>
-                <button 
-                  onClick={() => handleDeleteEpisode(ep.id)}
-                  className="bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-800/50 px-3 py-1.5 rounded-xl text-[11px] font-bold shrink-0 cursor-pointer transition-all"
-                >
-                  Delete
-                </button>
+                <div className="flex items-center space-x-1.5 shrink-0">
+                  <button 
+                    onClick={() => handleOpenEditEpisode(ep)}
+                    className="bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/40 px-3 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer transition-all"
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteEpisode(ep.id)}
+                    className="bg-red-950/60 hover:bg-red-900 text-red-400 border border-red-800/50 px-3 py-1.5 rounded-xl text-[11px] font-bold cursor-pointer transition-all"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -199,4 +272,4 @@ export const AdminManageTab: React.FC<AdminManageTabProps> = ({ stories, fetchSt
     </div>
   );
 };
-              
+        
