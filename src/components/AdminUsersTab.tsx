@@ -26,7 +26,6 @@ export const AdminUsersTab: React.FC = () => {
     fetchUsers();
   }, []);
 
-  // Total active users (jisne pichle 7 dino me login kiya ho ya total count)
   const totalUsers = usersList.length;
   const activeUsers = usersList.filter(u => {
     if (!u.last_login) return false;
@@ -50,7 +49,6 @@ export const AdminUsersTab: React.FC = () => {
         </button>
       </div>
 
-      {/* Counters Grid */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-[#121017] p-3 rounded-xl border border-gray-800 text-center">
           <span className="text-[10px] text-gray-400 uppercase tracking-wider">Total Users</span>
