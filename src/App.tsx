@@ -300,9 +300,15 @@ export default function App() {
     ? uniqueSeriesList 
     : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
 
+  // Featured story data
   const featuredTitle = localStorage.getItem('storyvoid_featured_title');
   const customBannerImg = localStorage.getItem('storyvoid_custom_banner_image');
   const featuredStoryData = uniqueSeriesList.find((s: any) => s.title === featuredTitle);
+
+  // Promo / Social Ad Banner data (Naya system)
+  const promoTitle = localStorage.getItem('storyvoid_promo_title');
+  const promoMedia = localStorage.getItem('storyvoid_promo_media');
+  const promoLink = localStorage.getItem('storyvoid_promo_link');
 
   if (showSplash) {
     return <SplashScreen />;
@@ -371,7 +377,44 @@ export default function App() {
                 ))}
               </div>
 
-              {featuredStoryData && (
+              {/* Promo Ad Banner (Agar admin ne set kiya hai toh pehle yeh chalega, warna featured story) */}
+              {promoMedia ? (
+                <div 
+                  onClick={() => {
+                    if (promoLink) window.open(promoLink, '_blank');
+                  }}
+                  className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 h-44 flex flex-col justify-end p-4 cursor-pointer shadow-xl group hover:border-orange-500 transition-all bg-[#16131c]"
+                >
+                  {promoMedia.match(/\.(mp4|webm|ogg)$/i) || promoMedia.includes('video') ? (
+                    <video 
+                      src={promoMedia} 
+                      autoPlay 
+                      loop 
+                      muted 
+                      playsInline 
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center" 
+                      style={{ backgroundImage: `url(${promoMedia})` }}
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0f0d13] via-[#0f0d13]/50 to-transparent"></div>
+                  
+                  <div className="relative z-10 space-y-1">
+                    <span className="text-[9px] bg-red-600 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">
+                      📢 Sponsored Promo / Ad
+                    </span>
+                    <h3 className="text-base font-black text-white">{promoTitle || 'Special Promotion'}</h3>
+                    <div className="pt-1">
+                      <span className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-1.5 rounded-xl text-[11px] shadow-md transition-all inline-block">
+                        🔗 Tap to Visit Link
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : featuredStoryData ? (
                 <div 
                   onClick={() => setSelectedStoryTitle(featuredStoryData.title)}
                   className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 h-44 flex flex-col justify-end p-4 cursor-pointer shadow-xl group hover:border-orange-500 transition-all bg-cover bg-center"
@@ -392,7 +435,7 @@ export default function App() {
                     </div>
                   </div>
                 </div>
-              )}
+              ) : null}
 
               <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 mb-6 flex justify-between items-center shadow-md">
                 <div>
