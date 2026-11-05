@@ -111,18 +111,22 @@ export default function App() {
     }
   };
 
-  // .update() ki jagah .upsert() use kiya hai taaki coins database me hamesha successfully save ho jayein
   const updateUserCoinsInDB = async (newCoins: number, email: string) => {
     try {
-      const { error } = await supabase
+      console.log('Updating coins in DB for:', email, 'Coins:', newCoins);
+      const { data, error } = await supabase
         .from('app_users')
-        .upsert({ email: email, coins: newCoins }, { onConflict: 'email' });
+        .update({ coins: newCoins })
+        .eq('email', email)
+        .select();
 
       if (error) {
-        console.error('Error saving coins in DB:', error.message);
+        console.error('Supabase Coin Update Error:', error.message);
+      } else {
+        console.log('Supabase Coin Update Success:', data);
       }
     } catch (err) {
-      console.error('Error updating coins in DB:', err);
+      console.error('Catch Error updating coins:', err);
     }
   };
 
@@ -212,7 +216,6 @@ export default function App() {
     const updatedCoins = coins - price;
     setCoins(updatedCoins);
     
-    // Database me turant coins update/upsert karo taaki refresh karne par wapas na aayein
     if (userEmail) {
       await updateUserCoinsInDB(updatedCoins, userEmail);
     }
@@ -293,8 +296,7 @@ export default function App() {
       showAppAlert('Playback Info', '✨ This is the first episode!');
     }
   };
-
-  const uniqueSeriesMap = new Map();
+                                  const uniqueSeriesMap = new Map();
   stories.forEach(item => {
     if (item.title && !uniqueSeriesMap.has(item.title)) {
       uniqueSeriesMap.set(item.title, {
@@ -574,4 +576,5 @@ export default function App() {
       </div>
     </div>
   );
-          }
+    }
+              
