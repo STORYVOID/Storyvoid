@@ -8,7 +8,7 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, setSuccessMessage }) => {
-  const [activeAdminTab, setActiveAdminTab] = useState<'episode' | 'story' | 'banner' | 'promo' | 'users' | 'manage'>('episode');
+  const [activeAdminTab, setActiveAdminTab] = useState<'episode' | 'story' | 'banner' | 'promo'>('episode');
 
   // Episode form state
   const [title, setTitle] = useState('');
@@ -24,7 +24,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
   const [featuredTitle, setFeaturedTitle] = useState(localStorage.getItem('storyvoid_featured_title') || '');
   const [customBannerImg, setCustomBannerImg] = useState(localStorage.getItem('storyvoid_custom_banner_image') || '');
 
-  // Promo / Social Banner state (Naya System)
+  // Promo / Social Banner state
   const [promoTitle, setPromoTitle] = useState(localStorage.getItem('storyvoid_promo_title') || '');
   const [promoMediaUrl, setPromoMediaUrl] = useState(localStorage.getItem('storyvoid_promo_media') || '');
   const [promoLink, setPromoLink] = useState(localStorage.getItem('storyvoid_promo_link') || '');
@@ -83,17 +83,38 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
   const uniqueSeriesNames = Array.from(new Set(stories.map(s => s.title)));
 
   return (
-    <div className="space-y-4 max-w-xl mx-auto">
+    <div className="space-y-4 max-w-xl mx-auto px-2">
       <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 text-center shadow-lg">
-        <h2 className="text-sm font-black text-orange-500 uppercase tracking-wider">🛠️ STORYVOID ADMIN COMMAND CENTER</h2>
-        <p className="text-[10px] text-gray-400 mt-0.5">Manage your audio series, promotional banners & settings</p>
+        <h2 className="text-sm font-black text-orange-500 uppercase tracking-wider">🛠️ ADMIN COMMAND CENTER</h2>
+        <p className="text-[10px] text-gray-400 mt-0.5">Manage your audio series and promotional banners</p>
       </div>
 
-      <div className="flex overflow-x-auto space-x-2 pb-2 scrollbar-none">
-        <button onClick={() => setActiveAdminTab('episode')} className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer ${activeAdminTab === 'episode' ? 'bg-orange-500 text-white' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}>+ Episode</button>
-        <button onClick={() => setActiveAdminTab('story')} className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer ${activeAdminTab === 'story' ? 'bg-orange-500 text-white' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}>+ New Story</button>
-        <button onClick={() => setActiveAdminTab('banner')} className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer ${activeAdminTab === 'banner' ? 'bg-orange-500 text-white' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}>⭐ Featured Banner</button>
-        <button onClick={() => setActiveAdminTab('promo')} className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap cursor-pointer ${activeAdminTab === 'promo' ? 'bg-orange-500 text-white' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}>📢 Promo / Social Ads</button>
+      {/* Tabs list with clean spacing and no overlapping text */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        <button 
+          onClick={() => setActiveAdminTab('episode')} 
+          className={`py-2 px-2 rounded-xl text-[11px] font-bold cursor-pointer transition-all text-center ${activeAdminTab === 'episode' ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}
+        >
+          + Episode
+        </button>
+        <button 
+          onClick={() => setActiveAdminTab('story')} 
+          className={`py-2 px-2 rounded-xl text-[11px] font-bold cursor-pointer transition-all text-center ${activeAdminTab === 'story' ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}
+        >
+          + New Story
+        </button>
+        <button 
+          onClick={() => setActiveAdminTab('banner')} 
+          className={`py-2 px-2 rounded-xl text-[11px] font-bold cursor-pointer transition-all text-center ${activeAdminTab === 'banner' ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}
+        >
+          ⭐ Banner
+        </button>
+        <button 
+          onClick={() => setActiveAdminTab('promo')} 
+          className={`py-2 px-2 rounded-xl text-[11px] font-bold cursor-pointer transition-all text-center ${activeAdminTab === 'promo' ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800'}`}
+        >
+          📢 Promo Ads
+        </button>
       </div>
 
       {activeAdminTab === 'episode' && (
@@ -179,7 +200,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
 
       {activeAdminTab === 'banner' && (
         <form onSubmit={handleSaveBanner} className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 space-y-3 shadow-lg">
-          <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wide">⭐ Set Home Featured / Trending Banner</h3>
+          <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wide">⭐ Set Home Featured Banner</h3>
 
           <div>
             <label className="text-[10px] text-gray-400">Select Featured Story</label>
@@ -192,7 +213,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
           <div>
             <label className="text-[10px] text-gray-400">Custom Banner Image URL (Optional)</label>
             <input type="text" placeholder="https://..." value={customBannerImg} onChange={e => setCustomBannerImg(e.target.value)} className="w-full bg-[#121017] border border-gray-800 rounded-xl p-2.5 text-xs text-white outline-none mt-1" />
-            <p className="text-[9px] text-gray-500 mt-1">Agar yeh khali chhodoge toh story ka apna poster banner par dikhega[span_0](start_span)[span_0](end_span).</p>
           </div>
 
           <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs shadow-lg cursor-pointer transition-all">
@@ -203,11 +223,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
 
       {activeAdminTab === 'promo' && (
         <form onSubmit={handleSavePromoBanner} className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 space-y-3 shadow-lg">
-          <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wide">📢 Promotional / Social Ad Banner (Naya System)</h3>
+          <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wide">📢 Promotional / Social Ad Banner</h3>
 
           <div>
             <label className="text-[10px] text-gray-400">Banner / Ad Title</label>
-            <input type="text" placeholder="e.g. Follow us on Instagram / New Movie Promo" value={promoTitle} onChange={e => setPromoTitle(e.target.value)} className="w-full bg-[#121017] border border-gray-800 rounded-xl p-2.5 text-xs text-white outline-none mt-1" />
+            <input type="text" placeholder="e.g. Follow us on Instagram" value={promoTitle} onChange={e => setPromoTitle(e.target.value)} className="w-full bg-[#121017] border border-gray-800 rounded-xl p-2.5 text-xs text-white outline-none mt-1" />
           </div>
 
           <div>
@@ -216,9 +236,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
           </div>
 
           <div>
-            <label className="text-[10px] text-gray-400">External Redirect Link (Instagram / YouTube / Website)</label>
+            <label className="text-[10px] text-gray-400">External Redirect Link (Instagram / YouTube)</label>
             <input type="text" placeholder="https://instagram.com/..." value={promoLink} onChange={e => setPromoLink(e.target.value)} className="w-full bg-[#121017] border border-gray-800 rounded-xl p-2.5 text-xs text-white outline-none mt-1" />
-            <p className="text-[9px] text-gray-500 mt-1">User jab is banner par click karega toh is link par redirect ho jayega.</p>
           </div>
 
           <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 rounded-xl text-xs shadow-lg cursor-pointer transition-all">
@@ -229,4 +248,3 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ stories, fetchStories, s
     </div>
   );
 };
-      
