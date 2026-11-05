@@ -111,19 +111,19 @@ export default function App() {
     }
   };
 
+  // .update() ki jagah .upsert() use kiya hai taaki coins 100% database me force-save ho jayein
   const updateUserCoinsInDB = async (newCoins: number, email: string) => {
     try {
-      console.log('Updating coins in DB for:', email, 'Coins:', newCoins);
+      const cleanEmail = email.trim().toLowerCase();
       const { data, error } = await supabase
         .from('app_users')
-        .update({ coins: newCoins })
-        .eq('email', email)
+        .upsert({ email: cleanEmail, coins: newCoins }, { onConflict: 'email' })
         .select();
 
       if (error) {
-        console.error('Supabase Coin Update Error:', error.message);
+        console.error('Supabase Coin Upsert Error:', error.message);
       } else {
-        console.log('Supabase Coin Update Success:', data);
+        console.log('Supabase Coin Upsert Success:', data);
       }
     } catch (err) {
       console.error('Catch Error updating coins:', err);
@@ -296,7 +296,7 @@ export default function App() {
       showAppAlert('Playback Info', '✨ This is the first episode!');
     }
   };
-                                  const uniqueSeriesMap = new Map();
+       const uniqueSeriesMap = new Map();
   stories.forEach(item => {
     if (item.title && !uniqueSeriesMap.has(item.title)) {
       uniqueSeriesMap.set(item.title, {
@@ -576,5 +576,5 @@ export default function App() {
       </div>
     </div>
   );
-    }
-              
+}
+  
