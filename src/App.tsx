@@ -103,7 +103,7 @@ export default function App() {
         .eq('email', email)
         .maybeSingle();
       
-      if (data && data.coins !== undefined) {
+      if (data && data.coins !== undefined && data.coins !== null) {
         setCoins(data.coins);
       }
     } catch (err) {
@@ -111,19 +111,15 @@ export default function App() {
     }
   };
 
-  // .update() ki jagah .upsert() use kiya hai taaki coins 100% database me force-save ho jayein
   const updateUserCoinsInDB = async (newCoins: number, email: string) => {
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('app_users')
-        .upsert({ email: cleanEmail, coins: newCoins }, { onConflict: 'email' })
-        .select();
+        .upsert({ email: cleanEmail, coins: newCoins }, { onConflict: 'email' });
 
       if (error) {
         console.error('Supabase Coin Upsert Error:', error.message);
-      } else {
-        console.log('Supabase Coin Upsert Success:', data);
       }
     } catch (err) {
       console.error('Catch Error updating coins:', err);
@@ -145,7 +141,9 @@ export default function App() {
         .eq('email', cleanEmail)
         .maybeSingle();
 
-      const initialCoins = existingUser?.coins ?? 30;
+      const initialCoins = (existingUser && existingUser.coins !== undefined && existingUser.coins !== null) 
+        ? existingUser.coins 
+        : 30;
 
       await supabase.from('app_users').upsert(
         [{ email: cleanEmail, coins: initialCoins, last_login: new Date().toISOString() }],
@@ -296,7 +294,7 @@ export default function App() {
       showAppAlert('Playback Info', '✨ This is the first episode!');
     }
   };
-       const uniqueSeriesMap = new Map();
+      const uniqueSeriesMap = new Map();
   stories.forEach(item => {
     if (item.title && !uniqueSeriesMap.has(item.title)) {
       uniqueSeriesMap.set(item.title, {
@@ -577,4 +575,3 @@ export default function App() {
     </div>
   );
 }
-  
