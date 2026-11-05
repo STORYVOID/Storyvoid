@@ -9,13 +9,10 @@ import { SearchView } from './components/SearchView';
 import { LibraryView } from './components/LibraryView';
 import { NotificationModal } from './components/NotificationModal';
 import { SplashScreen } from './components/SplashScreen';
-import { CoinStoreModal } from './components/CoinStoreModal';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<'home' | 'search' | 'library' | 'profile' | 'admin'>('home');
-  const [coins, setCoins] = useState<number>(30);
-  const [isCoinStoreOpen, setIsCoinStoreOpen] = useState<boolean>(false);
   const [stories, setStories] = useState<any[]>([]);
   const [loadingStories, setLoadingStories] = useState<boolean>(true);
   const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
@@ -47,16 +44,6 @@ export default function App() {
     return localStorage.getItem('storyvoid_is_admin') === 'true';
   });
 
-  const [unlockedEpisodes, setUnlockedEpisodes] = useState<Record<string, boolean>>(() => {
-    try {
-      const email = localStorage.getItem('storyvoid_email') || '';
-      const saved = localStorage.getItem(`storyvoid_unlocked_${email}`);
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const ADMIN_EMAIL = 'storyvoid.admin@gmail.com';
@@ -70,13 +57,8 @@ export default function App() {
     }, 2500);
 
     fetchStories();
-    if (userEmail) {
-      fetchUserCoins(userEmail);
-      const saved = localStorage.getItem(`storyvoid_unlocked_${userEmail}`);
-      setUnlockedEpisodes(saved ? JSON.parse(saved) : {});
-    }
     return () => clearTimeout(timer);
-  }, [userEmail]);
+  }, []);
 
   const fetchStories = async () => {
     try {
@@ -95,37 +77,6 @@ export default function App() {
     }
   };
 
-  const fetchUserCoins = async (email: string) => {
-    try {
-      const { data } = await supabase
-        .from('app_users')
-        .select('coins')
-        .eq('email', email)
-        .maybeSingle();
-      
-      if (data && data.coins !== undefined && data.coins !== null) {
-        setCoins(data.coins);
-      }
-    } catch (err) {
-      console.error('Error fetching coins from DB:', err);
-    }
-  };
-
-  const updateUserCoinsInDB = async (newCoins: number, email: string) => {
-    try {
-      const cleanEmail = email.trim().toLowerCase();
-      const { error } = await supabase
-        .from('app_users')
-        .upsert({ email: cleanEmail, coins: newCoins }, { onConflict: 'email' });
-
-      if (error) {
-        console.error('Supabase Coin Upsert Error:', error.message);
-      }
-    } catch (err) {
-      console.error('Catch Error updating coins:', err);
-    }
-  };
-
   const handleLogin = async (email: string, pass: string) => {
     if (!email) {
       showAppAlert('Error', 'Please enter your email!', false);
@@ -134,29 +85,6 @@ export default function App() {
 
     const cleanEmail = email.trim().toLowerCase();
     
-    try {
-      const { data: existingUser } = await supabase
-        .from('app_users')
-        .select('coins')
-        .eq('email', cleanEmail)
-        .maybeSingle();
-
-      const initialCoins = (existingUser && existingUser.coins !== undefined && existingUser.coins !== null) 
-        ? existingUser.coins 
-        : 30;
-
-      await supabase.from('app_users').upsert(
-        [{ email: cleanEmail, coins: initialCoins, last_login: new Date().toISOString() }],
-        { onConflict: 'email' }
-      );
-      setCoins(initialCoins);
-    } catch (err) {
-      console.error('Error saving user to DB:', err);
-    }
-
-    const savedUnlocked = localStorage.getItem(`storyvoid_unlocked_${cleanEmail}`);
-    setUnlockedEpisodes(savedUnlocked ? JSON.parse(savedUnlocked) : {});
-
     if (cleanEmail === ADMIN_EMAIL) {
       if (pass !== ADMIN_PASSWORD) {
         showAppAlert('Access Denied', 'Incorrect Admin Password!', false);
@@ -181,48 +109,13 @@ export default function App() {
     setIsAdmin(false);
     setUserEmail('');
     setActiveTab('home');
-    setUnlockedEpisodes({});
     setCurrentPlayingEpisode(null);
     localStorage.removeItem('storyvoid_logged_in');
     localStorage.removeItem('storyvoid_email');
     localStorage.removeItem('storyvoid_is_admin');
   };
 
-  const watchAdForCoins = async () => {
-    const updatedCoins = coins + 20;
-    setCoins(updatedCoins);
-    if (userEmail) {
-      await updateUserCoinsInDB(updatedCoins, userEmail);
-    }
-    showAppAlert('Coins Added', '🎉 Ad watched successfully! +20 coins added to your wallet.');
-  };
-
-  const handleBuyCoins = async (coinsToAdd: number, amount: number) => {
-    const updatedCoins = coins + coinsToAdd;
-    setCoins(updatedCoins);
-    if (userEmail) {
-      await updateUserCoinsInDB(updatedCoins, userEmail);
-    }
-    showAppAlert('Coins Added', `🎉 Successfully purchased ${coinsToAdd} coins for ₹${amount}!`);
-  };
-
   const handleUnlockEpisode = async (ep: any, price: number) => {
-    if (coins < price) {
-      showAppAlert('Insufficient Coins', `❌ You need ${price} coins to unlock this episode. Watch an ad or buy coins from store!`, false);
-      return false;
-    }
-    const updatedCoins = coins - price;
-    setCoins(updatedCoins);
-    
-    if (userEmail) {
-      await updateUserCoinsInDB(updatedCoins, userEmail);
-    }
-    
-    const newUnlocked = { ...unlockedEpisodes, [ep.id]: true };
-    setUnlockedEpisodes(newUnlocked);
-    if (userEmail) {
-      localStorage.setItem(`storyvoid_unlocked_${userEmail}`, JSON.stringify(newUnlocked));
-    }
     return true;
   };
 
@@ -341,24 +234,14 @@ export default function App() {
         onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
       />
 
-      <CoinStoreModal 
-        isOpen={isCoinStoreOpen}
-        onClose={() => setIsCoinStoreOpen(false)}
-        onBuyCoins={handleBuyCoins}
-      />
-
       <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-[#121017]">
         <div>
           <h1 className="text-xl font-extrabold tracking-wider text-orange-500">STORYVOID</h1>
           <p className="text-[10px] text-gray-400">SERIALIZED AUDIO</p>
         </div>
-        <div 
-          onClick={() => setIsCoinStoreOpen(true)}
-          className="flex items-center bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-700 cursor-pointer hover:border-orange-500 transition-all shadow-md"
-        >
-          <span className="text-yellow-400 mr-1.5">🟡</span>
-          <span className="text-xs font-semibold">{coins} Coins</span>
-          <span className="ml-1.5 text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full font-bold">+</span>
+        <div className="flex items-center bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-700">
+          <span className="text-emerald-400 mr-1.5 font-bold">✓</span>
+          <span className="text-xs font-semibold text-gray-200">Free Access</span>
         </div>
       </div>
 
@@ -370,10 +253,10 @@ export default function App() {
             <EpisodeList 
               selectedStoryTitle={selectedStoryTitle}
               stories={stories}
-              unlockedEpisodes={unlockedEpisodes}
+              unlockedEpisodes={{}}
               onBack={() => setSelectedStoryTitle(null)}
               onEpisodeAction={handleEpisodeAction}
-              coins={coins}
+              coins={0}
               onUnlockEpisode={handleUnlockEpisode}
             />
           ) : (
@@ -449,19 +332,6 @@ export default function App() {
                 </div>
               ) : null}
 
-              <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 mb-6 flex justify-between items-center shadow-md">
-                <div>
-                  <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-wide">🟡 Earn Free Coins</h3>
-                  <p className="text-[11px] text-gray-300">Watch a short ad to get +20 coins.</p>
-                </div>
-                <button 
-                  onClick={watchAdForCoins}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-md cursor-pointer"
-                >
-                  Watch Ad
-                </button>
-              </div>
-
               <div className="flex justify-between items-center mb-3">
                 <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">
                   {selectedGenreFilter === 'All' ? 'All Audio Series' : `${selectedGenreFilter} Series`}
@@ -505,8 +375,8 @@ export default function App() {
       {activeTab === 'search' && (
         <SearchView 
           stories={stories}
-          unlockedEpisodes={unlockedEpisodes}
-          coins={coins}
+          unlockedEpisodes={{}}
+          coins={0}
           onEpisodeAction={handleEpisodeAction}
           onUnlockEpisode={handleUnlockEpisode}
         />
@@ -515,8 +385,8 @@ export default function App() {
       {activeTab === 'library' && (
         <LibraryView 
           stories={stories}
-          unlockedEpisodes={unlockedEpisodes}
-          coins={coins}
+          unlockedEpisodes={{}}
+          coins={0}
           onEpisodeAction={handleEpisodeAction}
           onUnlockEpisode={handleUnlockEpisode}
         />
@@ -527,9 +397,9 @@ export default function App() {
           userEmail={userEmail} 
           isAdmin={isAdmin} 
           onLogout={handleLogout}
-          onOpenCoinStore={() => setIsCoinStoreOpen(true)}
-          onWatchAd={watchAdForCoins}
-          coins={coins}
+          onOpenCoinStore={() => {}}
+          onWatchAd={() => {}}
+          coins={0}
         />
       )}
 
@@ -574,4 +444,4 @@ export default function App() {
       </div>
     </div>
   );
-}
+                  }
