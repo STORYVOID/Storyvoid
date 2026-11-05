@@ -37,15 +37,9 @@ export default function App() {
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   
-  const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    return localStorage.getItem('storyvoid_logged_in') === 'true';
-  });
-  const [userEmail, setUserEmail] = useState(() => {
-    return localStorage.getItem('storyvoid_email') || '';
-  });
-  const [isAdmin, setIsAdmin] = useState(() => {
-    return localStorage.getItem('storyvoid_is_admin') === 'true';
-  });
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('storyvoid_logged_in') === 'true');
+  const [userEmail, setUserEmail] = useState(() => localStorage.getItem('storyvoid_email') || '');
+  const [isAdmin, setIsAdmin] = useState(() => localStorage.getItem('storyvoid_is_admin') === 'true');
 
   const [unlockedEpisodes, setUnlockedEpisodes] = useState<Record<string, boolean>>(() => {
     try {
@@ -65,13 +59,10 @@ export default function App() {
   const genresList = ['All', 'Fantasy', 'Romance', 'Crime', 'Thriller', 'Horror', 'Mystery', 'Action', 'Drama', 'Sci-Fi', 'Comedy'];
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2500);
-
+    const timer = setTimeout(() => setShowSplash(false), 2500);
     fetchStories();
     if (userEmail) {
-      fetchUserCoins(userEmail);
+      syncAndFetchUserCoins(userEmail);
       const saved = localStorage.getItem(`storyvoid_unlocked_${userEmail}`);
       setUnlockedEpisodes(saved ? JSON.parse(saved) : {});
     }
@@ -81,11 +72,7 @@ export default function App() {
   const fetchStories = async () => {
     try {
       setLoadingStories(true);
-      const { data, error } = await supabase
-        .from('stories')
-        .select('*')
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await supabase.from('stories').select('*').order('created_at', { ascending: false });
       if (error) throw error;
       if (data) setStories(data);
     } catch (err) {
@@ -95,34 +82,52 @@ export default function App() {
     }
   };
 
-  const fetchUserCoins = async (email: string) => {
+  // Database se coins fetch karna aur agar user na ho toh create kar dena
+  const syncAndFetchUserCoins = async (email: string) => {
     try {
-      const { data } = await supabase
+      const cleanEmail = email.trim().toLowerCase();
+      const { data, error } = await supabase
         .from('app_users')
         .select('coins')
-        .eq('email', email)
+        .eq('email', cleanEmail)
         .maybeSingle();
       
-      if (data && data.coins !== undefined && data.coins !== null) {
+      if (error || !data) {
+        // Agar user database me nahi hai, toh ise default 30 coins ke sath insert kar do
+        await supabase
+          .from('app_users')
+          .insert([{ email: cleanEmail, coins: 30 }]);
+        setCoins(30);
+      } else if (data.coins !== undefined && data.coins !== null) {
         setCoins(data.coins);
       }
     } catch (err) {
-      console.error('Error fetching coins from DB:', err);
+      console.error('Error syncing user with DB:', err);
     }
   };
 
   const updateUserCoinsInDB = async (newCoins: number, email: string) => {
     try {
       const cleanEmail = email.trim().toLowerCase();
-      const { error } = await supabase
+      // Pehle check karo ki row exist karti hai ya nahi
+      const { data } = await supabase
         .from('app_users')
-        .upsert({ email: cleanEmail, coins: newCoins }, { onConflict: 'email' });
+        .select('email')
+        .eq('email', cleanEmail)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Supabase Coin Upsert Error:', error.message);
+      if (data) {
+        await supabase
+          .from('app_users')
+          .update({ coins: newCoins })
+          .eq('email', cleanEmail);
+      } else {
+        await supabase
+          .from('app_users')
+          .insert([{ email: cleanEmail, coins: newCoins }]);
       }
     } catch (err) {
-      console.error('Catch Error updating coins:', err);
+      console.error('Error updating coins in DB:', err);
     }
   };
 
@@ -134,6 +139,7 @@ export default function App() {
 
     const cleanEmail = email.trim().toLowerCase();
     
+    // Login ke waqt database me user ensure karna
     try {
       const { data: existingUser } = await supabase
         .from('app_users')
@@ -141,17 +147,18 @@ export default function App() {
         .eq('email', cleanEmail)
         .maybeSingle();
 
-      const initialCoins = (existingUser && existingUser.coins !== undefined && existingUser.coins !== null) 
-        ? existingUser.coins 
-        : 30;
-
-      await supabase.from('app_users').upsert(
-        [{ email: cleanEmail, coins: initialCoins, last_login: new Date().toISOString() }],
-        { onConflict: 'email' }
-      );
-      setCoins(initialCoins);
+      let currentCoins = 30;
+      if (existingUser && existingUser.coins !== undefined && existingUser.coins !== null) {
+        currentCoins = existingUser.coins;
+        setCoins(currentCoins);
+      } else {
+        await supabase
+          .from('app_users')
+          .insert([{ email: cleanEmail, coins: 30 }]);
+        setCoins(30);
+      }
     } catch (err) {
-      console.error('Error saving user to DB:', err);
+      console.error('Login DB error:', err);
     }
 
     const savedUnlocked = localStorage.getItem(`storyvoid_unlocked_${cleanEmail}`);
@@ -191,18 +198,14 @@ export default function App() {
   const watchAdForCoins = async () => {
     const updatedCoins = coins + 20;
     setCoins(updatedCoins);
-    if (userEmail) {
-      await updateUserCoinsInDB(updatedCoins, userEmail);
-    }
+    if (userEmail) await updateUserCoinsInDB(updatedCoins, userEmail);
     showAppAlert('Coins Added', '🎉 Ad watched successfully! +20 coins added to your wallet.');
   };
 
   const handleBuyCoins = async (coinsToAdd: number, amount: number) => {
     const updatedCoins = coins + coinsToAdd;
     setCoins(updatedCoins);
-    if (userEmail) {
-      await updateUserCoinsInDB(updatedCoins, userEmail);
-    }
+    if (userEmail) await updateUserCoinsInDB(updatedCoins, userEmail);
     showAppAlert('Coins Added', `🎉 Successfully purchased ${coinsToAdd} coins for ₹${amount}!`);
   };
 
@@ -214,15 +217,11 @@ export default function App() {
     const updatedCoins = coins - price;
     setCoins(updatedCoins);
     
-    if (userEmail) {
-      await updateUserCoinsInDB(updatedCoins, userEmail);
-    }
+    if (userEmail) await updateUserCoinsInDB(updatedCoins, userEmail);
     
     const newUnlocked = { ...unlockedEpisodes, [ep.id]: true };
     setUnlockedEpisodes(newUnlocked);
-    if (userEmail) {
-      localStorage.setItem(`storyvoid_unlocked_${userEmail}`, JSON.stringify(newUnlocked));
-    }
+    if (userEmail) localStorage.setItem(`storyvoid_unlocked_${userEmail}`, JSON.stringify(newUnlocked));
     return true;
   };
 
@@ -237,18 +236,9 @@ export default function App() {
     try {
       const savedHistory = localStorage.getItem('storyvoid_listening_history');
       let historyList: any[] = savedHistory ? JSON.parse(savedHistory) : [];
-
       historyList = historyList.filter(item => item.id !== ep.id);
-      historyList.unshift({
-        id: ep.id,
-        title: ep.title,
-        episode_title: ep.episode_title,
-        poster_url: ep.poster_url,
-        genre: ep.genre,
-      });
-
+      historyList.unshift({ id: ep.id, title: ep.title, episode_title: ep.episode_title, poster_url: ep.poster_url, genre: ep.genre });
       if (historyList.length > 20) historyList.pop();
-
       localStorage.setItem('storyvoid_listening_history', JSON.stringify(historyList));
     } catch (err) {
       console.error('Error saving history:', err);
@@ -278,8 +268,7 @@ export default function App() {
   const playNext = () => {
     if (currentIndex < currentPlaylist.length - 1) {
       const nextIdx = currentIndex + 1;
-      const nextEp = currentPlaylist[nextIdx];
-      handleEpisodeAction(nextEp, currentPlaylist, nextIdx);
+      handleEpisodeAction(currentPlaylist[nextIdx], currentPlaylist, nextIdx);
     } else {
       showAppAlert('Playback Info', '✨ This is the last episode of the series!');
     }
@@ -288,12 +277,12 @@ export default function App() {
   const playPrev = () => {
     if (currentIndex > 0) {
       const prevIdx = currentIndex - 1;
-      const prevEp = currentPlaylist[prevIdx];
-      handleEpisodeAction(prevEp, currentPlaylist, prevIdx);
+      handleEpisodeAction(currentPlaylist[prevIdx], currentPlaylist, prevIdx);
     } else {
       showAppAlert('Playback Info', '✨ This is the first episode!');
     }
   };
+
   const uniqueSeriesMap = new Map();
   stories.forEach(item => {
     if (item.title && !uniqueSeriesMap.has(item.title)) {
@@ -305,31 +294,21 @@ export default function App() {
         episodesCount: 1
       });
     } else if (item.title) {
-      const existing = uniqueSeriesMap.get(item.title);
-      existing.episodesCount += 1;
+      uniqueSeriesMap.get(item.title).episodesCount += 1;
     }
   });
   const uniqueSeriesList = Array.from(uniqueSeriesMap.values());
-
-  const filteredSeriesList = selectedGenreFilter === 'All' 
-    ? uniqueSeriesList 
-    : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
+  const filteredSeriesList = selectedGenreFilter === 'All' ? uniqueSeriesList : uniqueSeriesList.filter((s: any) => s.genre?.toLowerCase() === selectedGenreFilter.toLowerCase());
 
   const featuredTitle = localStorage.getItem('storyvoid_featured_title');
   const customBannerImg = localStorage.getItem('storyvoid_custom_banner_image');
   const featuredStoryData = uniqueSeriesList.find((s: any) => s.title === featuredTitle);
-
   const promoTitle = localStorage.getItem('storyvoid_promo_title');
   const promoMedia = localStorage.getItem('storyvoid_promo_media');
   const promoLink = localStorage.getItem('storyvoid_promo_link');
 
-  if (showSplash) {
-    return <SplashScreen />;
-  }
-
-  if (!isLoggedIn) {
-    return <AuthScreen onLogin={handleLogin} />;
-  }
+  if (showSplash) return <SplashScreen />;
+  if (!isLoggedIn) return <AuthScreen onLogin={handleLogin} />;
 
   return (
     <div className="bg-[#0f0d13] min-h-screen text-white font-sans pb-40 selection:bg-orange-500">
@@ -340,22 +319,14 @@ export default function App() {
         isSuccess={modalConfig.isSuccess}
         onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))}
       />
-
-      <CoinStoreModal 
-        isOpen={isCoinStoreOpen}
-        onClose={() => setIsCoinStoreOpen(false)}
-        onBuyCoins={handleBuyCoins}
-      />
+      <CoinStoreModal isOpen={isCoinStoreOpen} onClose={() => setIsCoinStoreOpen(false)} onBuyCoins={handleBuyCoins} />
 
       <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-[#121017]">
         <div>
           <h1 className="text-xl font-extrabold tracking-wider text-orange-500">STORYVOID</h1>
           <p className="text-[10px] text-gray-400">SERIALIZED AUDIO</p>
         </div>
-        <div 
-          onClick={() => setIsCoinStoreOpen(true)}
-          className="flex items-center bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-700 cursor-pointer hover:border-orange-500 transition-all shadow-md"
-        >
+        <div onClick={() => setIsCoinStoreOpen(true)} className="flex items-center bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-700 cursor-pointer hover:border-orange-500 transition-all shadow-md">
           <span className="text-yellow-400 mr-1.5">🟡</span>
           <span className="text-xs font-semibold">{coins} Coins</span>
           <span className="ml-1.5 text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full font-bold">+</span>
@@ -380,71 +351,34 @@ export default function App() {
             <div>
               <div className="flex overflow-x-auto space-x-2 pb-2 mb-4 scrollbar-none">
                 {genresList.map((genre, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedGenreFilter(genre)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${selectedGenreFilter === genre ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800 hover:text-white'}`}
-                  >
+                  <button key={idx} onClick={() => setSelectedGenreFilter(genre)} className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${selectedGenreFilter === genre ? 'bg-orange-500 text-white shadow-md' : 'bg-[#16131c] text-gray-400 border border-gray-800 hover:text-white'}`}>
                     {genre}
                   </button>
                 ))}
               </div>
 
               {promoMedia ? (
-                <div 
-                  onClick={() => {
-                    if (promoLink) window.open(promoLink, '_blank');
-                  }}
-                  className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 h-44 flex flex-col justify-end p-4 cursor-pointer shadow-xl group hover:border-orange-500 transition-all bg-[#16131c]"
-                >
+                <div onClick={() => { if (promoLink) window.open(promoLink, '_blank'); }} className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 h-44 flex flex-col justify-end p-4 cursor-pointer shadow-xl group hover:border-orange-500 transition-all bg-[#16131c]">
                   {promoMedia.match(/\.(mp4|webm|ogg)$/i) || promoMedia.includes('video') ? (
-                    <video 
-                      src={promoMedia} 
-                      autoPlay 
-                      loop 
-                      muted 
-                      playsInline 
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
+                    <video src={promoMedia} autoPlay loop muted playsInline className="absolute inset-0 w-full h-full object-cover" />
                   ) : (
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center" 
-                      style={{ backgroundImage: `url(${promoMedia})` }}
-                    />
+                    <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${promoMedia})` }} />
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0f0d13] via-[#0f0d13]/50 to-transparent"></div>
-                  
                   <div className="relative z-10 space-y-1">
-                    <span className="text-[9px] bg-red-600 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">
-                      📢 Sponsored Promo / Ad
-                    </span>
+                    <span className="text-[9px] bg-red-600 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">📢 Sponsored Promo / Ad</span>
                     <h3 className="text-base font-black text-white">{promoTitle || 'Special Promotion'}</h3>
-                    <div className="pt-1">
-                      <span className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-1.5 rounded-xl text-[11px] shadow-md transition-all inline-block">
-                        🔗 Tap to Visit Link
-                      </span>
-                    </div>
+                    <div className="pt-1"><span className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-1.5 rounded-xl text-[11px] shadow-md transition-all inline-block">🔗 Tap to Visit Link</span></div>
                   </div>
                 </div>
               ) : featuredStoryData ? (
-                <div 
-                  onClick={() => setSelectedStoryTitle(featuredStoryData.title)}
-                  className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 h-44 flex flex-col justify-end p-4 cursor-pointer shadow-xl group hover:border-orange-500 transition-all bg-cover bg-center"
-                  style={{ backgroundImage: `url(${customBannerImg || featuredStoryData.poster_url})` }}
-                >
+                <div onClick={() => setSelectedStoryTitle(featuredStoryData.title)} className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 h-44 flex flex-col justify-end p-4 cursor-pointer shadow-xl group hover:border-orange-500 transition-all bg-cover bg-center" style={{ backgroundImage: `url(${customBannerImg || featuredStoryData.poster_url})` }}>
                   <div className="absolute inset-0 bg-gradient-to-t from-[#0f0d13] via-[#0f0d13]/70 to-transparent"></div>
-                  
                   <div className="relative z-10 space-y-1">
-                    <span className="text-[9px] bg-orange-500 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">
-                      🔥 Trending & Featured
-                    </span>
+                    <span className="text-[9px] bg-orange-500 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">🔥 Trending & Featured</span>
                     <h3 className="text-base font-black text-white">{featuredStoryData.title}</h3>
                     <p className="text-[10px] text-gray-300 line-clamp-1 leading-relaxed">{featuredStoryData.description || 'Listen to this amazing audio series now.'}</p>
-                    <div className="pt-1">
-                      <span className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-1.5 rounded-xl text-[11px] shadow-md transition-all inline-block">
-                        ✨ Play Now
-                      </span>
-                    </div>
+                    <div className="pt-1"><span className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-1.5 rounded-xl text-[11px] shadow-md transition-all inline-block">✨ Play Now</span></div>
                   </div>
                 </div>
               ) : null}
@@ -454,43 +388,24 @@ export default function App() {
                   <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-wide">🟡 Earn Free Coins</h3>
                   <p className="text-[11px] text-gray-300">Watch a short ad to get +20 coins.</p>
                 </div>
-                <button 
-                  onClick={watchAdForCoins}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-md cursor-pointer"
-                >
-                  Watch Ad
-                </button>
+                <button onClick={watchAdForCoins} className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-md cursor-pointer">Watch Ad</button>
               </div>
 
               <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">
-                  {selectedGenreFilter === 'All' ? 'All Audio Series' : `${selectedGenreFilter} Series`}
-                </h3>
+                <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">{selectedGenreFilter === 'All' ? 'All Audio Series' : `${selectedGenreFilter} Series`}</h3>
                 <button onClick={fetchStories} className="text-[10px] text-orange-400 underline cursor-pointer">Refresh</button>
               </div>
 
               {loadingStories ? (
                 <p className="text-xs text-gray-400 text-center py-6">Loading series...</p>
               ) : filteredSeriesList.length === 0 ? (
-                <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 text-center">
-                  <p className="text-xs text-gray-400 mb-2">No series found in this genre.</p>
-                </div>
+                <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 text-center"><p className="text-xs text-gray-400 mb-2">No series found in this genre.</p></div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   {filteredSeriesList.map((series: any, idx: number) => (
-                    <div 
-                      key={idx} 
-                      onClick={() => setSelectedStoryTitle(series.title)}
-                      className="bg-[#16131c] rounded-xl p-2.5 border border-gray-800 cursor-pointer hover:border-orange-500 transition-all shadow-md"
-                    >
-                      <img 
-                        src={series.poster_url} 
-                        alt="Poster" 
-                        className="h-36 w-full object-cover rounded-lg mb-2 border border-gray-700" 
-                      />
-                      <span className="text-[9px] bg-orange-900/60 text-orange-300 px-2.5 py-0.5 rounded-full font-bold inline-block">
-                        {series.genre}
-                      </span>
+                    <div key={idx} onClick={() => setSelectedStoryTitle(series.title)} className="bg-[#16131c] rounded-xl p-2.5 border border-gray-800 cursor-pointer hover:border-orange-500 transition-all shadow-md">
+                      <img src={series.poster_url} alt="Poster" className="h-36 w-full object-cover rounded-lg mb-2 border border-gray-700" />
+                      <span className="text-[9px] bg-orange-900/60 text-orange-300 px-2.5 py-0.5 rounded-full font-bold inline-block">{series.genre}</span>
                       <h4 className="text-xs font-bold truncate mt-1 text-white">{series.title}</h4>
                       <p className="text-[10px] text-gray-400 mt-0.5">{series.episodesCount} Episodes</p>
                     </div>
@@ -502,76 +417,20 @@ export default function App() {
         </div>
       )}
 
-      {activeTab === 'search' && (
-        <SearchView 
-          stories={stories}
-          unlockedEpisodes={unlockedEpisodes}
-          coins={coins}
-          onEpisodeAction={handleEpisodeAction}
-          onUnlockEpisode={handleUnlockEpisode}
-        />
-      )}
+      {activeTab === 'search' && <SearchView stories={stories} unlockedEpisodes={unlockedEpisodes} coins={coins} onEpisodeAction={handleEpisodeAction} onUnlockEpisode={handleUnlockEpisode} />}
+      {activeTab === 'library' && <LibraryView stories={stories} unlockedEpisodes={unlockedEpisodes} coins={coins} onEpisodeAction={handleEpisodeAction} onUnlockEpisode={handleUnlockEpisode} />}
+      {activeTab === 'profile' && <ProfileView userEmail={userEmail} isAdmin={isAdmin} onLogout={handleLogout} onOpenCoinStore={() => setIsCoinStoreOpen(true)} onWatchAd={watchAdForCoins} coins={coins} />}
+      {activeTab === 'admin' && isAdmin && <div className="p-4 pb-12"><AdminPanel stories={stories} fetchStories={fetchStories} setSuccessMessage={(msg) => showAppAlert('Success', msg)} /></div>}
 
-      {activeTab === 'library' && (
-        <LibraryView 
-          stories={stories}
-          unlockedEpisodes={unlockedEpisodes}
-          coins={coins}
-          onEpisodeAction={handleEpisodeAction}
-          onUnlockEpisode={handleUnlockEpisode}
-        />
-      )}
-
-      {activeTab === 'profile' && (
-        <ProfileView 
-          userEmail={userEmail} 
-          isAdmin={isAdmin} 
-          onLogout={handleLogout}
-          onOpenCoinStore={() => setIsCoinStoreOpen(true)}
-          onWatchAd={watchAdForCoins}
-          coins={coins}
-        />
-      )}
-
-      {activeTab === 'admin' && isAdmin && (
-        <div className="p-4 pb-12">
-          <AdminPanel stories={stories} fetchStories={fetchStories} setSuccessMessage={(msg) => showAppAlert('Success', msg)} />
-        </div>
-      )}
-
-      <AudioPlayer 
-        currentPlayingEpisode={currentPlayingEpisode}
-        isPlaying={isPlaying}
-        togglePlayPause={togglePlayPause}
-        playNext={playNext}
-        playPrev={playPrev}
-        audioRef={audioRef}
-      />
+      <AudioPlayer currentPlayingEpisode={currentPlayingEpisode} isPlaying={isPlaying} togglePlayPause={togglePlayPause} playNext={playNext} playPrev={playPrev} audioRef={audioRef} />
 
       <div className="fixed bottom-0 left-0 right-0 bg-[#121017] border-t border-gray-800 flex justify-around py-3 px-2 z-50">
-        <button onClick={() => { setActiveTab('home'); setSelectedStoryTitle(null); }} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'home' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
-          <span>🏠</span>
-          <span className="text-[10px] mt-1">HOME</span>
-        </button>
-        <button onClick={() => setActiveTab('search')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'search' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
-          <span>🔍</span>
-          <span className="text-[10px] mt-1">SEARCH</span>
-        </button>
-        <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'library' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
-          <span>📚</span>
-          <span className="text-[10px] mt-1">LIBRARY</span>
-        </button>
-        <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'profile' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
-          <span>👤</span>
-          <span className="text-[10px] mt-1">PROFILE</span>
-        </button>
-        {isAdmin && (
-          <button onClick={() => setActiveTab('admin')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'admin' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
-            <span>🛠️</span>
-            <span className="text-[10px] mt-1">ADMIN</span>
-          </button>
-        )}
+        <button onClick={() => { setActiveTab('home'); setSelectedStoryTitle(null); }} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'home' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}><span>🏠</span><span className="text-[10px] mt-1">HOME</span></button>
+        <button onClick={() => setActiveTab('search')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'search' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}><span>🔍</span><span className="text-[10px] mt-1">SEARCH</span></button>
+        <button onClick={() => setActiveTab('library')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'library' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}><span>📚</span><span className="text-[10px] mt-1">LIBRARY</span></button>
+        <button onClick={() => setActiveTab('profile')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'profile' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}><span>👤</span><span className="text-[10px] mt-1">PROFILE</span></button>
+        {isAdmin && <button onClick={() => setActiveTab('admin')} className={`flex flex-col items-center text-xs cursor-pointer ${activeTab === 'admin' ? 'text-orange-500 font-bold' : 'text-gray-400'}`}><span>🛠️</span><span className="text-[10px] mt-1">ADMIN</span></button>}
       </div>
     </div>
   );
-        }
+          }
