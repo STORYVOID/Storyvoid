@@ -11,57 +11,49 @@ import { NotificationModal } from './components/NotificationModal';
 import { SplashScreen } from './components/SplashScreen';
 import { CoinStoreModal } from './components/CoinStoreModal';
 
-export default function App() {
-  const [showSplash, setShowSplash] = useState<boolean>(true);
-  const [authReady, setAuthReady] = useState<boolean>(false);
+const App: React.FC = () => {
+  const [showSplash, setShowSplash] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
 
   const [activeTab, setActiveTab] = useState<
     'home' | 'search' | 'library' | 'profile' | 'admin'
   >('home');
 
-  const [coins, setCoins] = useState<number>(30);
-  const [isCoinStoreOpen, setIsCoinStoreOpen] = useState<boolean>(false);
-  const [stories, setStories] = useState<any[]>([]);
-  const [loadingStories, setLoadingStories] = useState<boolean>(true);
-  const [selectedStoryTitle, setSelectedStoryTitle] = useState<string | null>(null);
-  const [selectedGenreFilter, setSelectedGenreFilter] = useState<string>('All');
+  const [coins, setCoins] = useState(30);
+  const [isCoinStoreOpen, setIsCoinStoreOpen] = useState(false);
 
-  const [modalConfig, setModalConfig] = useState<{
-    isOpen: boolean;
-    title: string;
-    message: string;
-    isSuccess: boolean;
-  }>({
+  const [stories, setStories] = useState<any[]>([]);
+  const [loadingStories, setLoadingStories] = useState(false);
+
+  const [selectedStoryTitle, setSelectedStoryTitle] = useState('');
+  const [selectedGenreFilter, setSelectedGenreFilter] = useState('All');
+
+  const [modalConfig, setModalConfig] = useState({
     isOpen: false,
     title: '',
     message: '',
-    isSuccess: true,
+    isSuccess: false,
   });
 
-  const showAppAlert = (
-    title: string,
-    message: string,
-    isSuccess = true
-  ) => {
-    setModalConfig({ isOpen: true, title, message, isSuccess });
-  };
+  const [currentPlayingEpisode, setCurrentPlayingEpisode] =
+    useState<any>(null);
 
-  const [currentPlayingEpisode, setCurrentPlayingEpisode] = useState<any>(null);
   const [currentPlaylist, setCurrentPlaylist] = useState<any[]>([]);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
 
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
-  const [userEmail, setUserEmail] = useState<string>('');
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const [unlockedEpisodes, setUnlockedEpisodes] = useState<
     Record<string, boolean>
   >({});
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const authUserIdRef = useRef<string | null>(null);
 
-  const genresList = [
+  const genres = [
     'All',
     'Fantasy',
     'Romance',
@@ -75,139 +67,157 @@ export default function App() {
     'Comedy',
   ];
 
-  // ---------------------------------------
-  // SUPABASE AUTHENTICATION
-  // ---------------------------------------
+  const showMessage = (
+    title: string,
+    message: string,
+    isSuccess = false
+  ) => {
+    setModalConfig({
+      isOpen: true,
+      title,
+      message,
+      isSuccess,
+    });
+  };
 
-  const applyAuthUser = (user: any) => {
+  // SUPABASE WALLET DATA
+  const fetchUserWallet = async (userId: string) => {
+    try {
+      const [walletResult, unlockedResult] = await Promise.all([
+        supabase
+          .from('app_users')
+          .select('coins')
+          .eq('id', userId)
+          .maybeSingle(),
+
+        supabase
+          .from('unlocked_episodes')
+          .select('episode_id')
+          .eq('user_id', userId),
+      ]);
+
+      if (walletResult.error) {
+        console.error('Wallet fetch error:', walletResult.error);
+      } else if (walletResult.data) {
+        setCoins(walletResult.data.coins ?? 30);
+      }
+
+      if (unlockedResult.error) {
+        console.error('Unlocked episodes error:', unlockedResult.error);
+      } else {
+        const unlockedMap: Record<string, boolean> = {};
+
+        (unlockedResult.data || []).forEach((item: any) => {
+          unlockedMap[item.episode_id] = true;
+        });
+
+        setUnlockedEpisodes(unlockedMap);
+      }
+    } catch (error) {
+      console.error('Wallet loading failed:', error);
+    }
+  };
+
+  // AUTH USER HANDLER
+  const applyAuthUser = async (user: any) => {
     if (!user) {
+      authUserIdRef.current = null;
+
       setIsLoggedIn(false);
       setUserEmail('');
       setIsAdmin(false);
       setCoins(30);
       setUnlockedEpisodes({});
+
       return;
     }
 
-    const email = (user.email || '').trim().toLowerCase();
+    authUserIdRef.current = user.id;
 
-    // Admin role trusted Supabase app_metadata se check hota hai.
-    const adminRole = user.app_metadata?.role === 'admin';
+    const email = (user.email || '').toLowerCase();
 
     setIsLoggedIn(true);
     setUserEmail(email);
-    setIsAdmin(adminRole);
+    setIsAdmin(user.app_metadata?.role === 'admin');
 
-    // Purane local login flags hata do.
-    localStorage.removeItem('storyvoid_logged_in');
-    localStorage.removeItem('storyvoid_is_admin');
+    setCoins(30);
+    setUnlockedEpisodes({});
 
-    // Temporary local coin balance.
-    const savedCoins = localStorage.getItem(`storyvoid_coins_${email}`);
-    const parsedCoins = savedCoins !== null ? Number(savedCoins) : 30;
-
-    setCoins(
-      Number.isFinite(parsedCoins) && parsedCoins >= 0
-        ? parsedCoins
-        : 30
-    );
-
-    // User ke unlocked episodes load karo.
-    try {
-      const saved = localStorage.getItem(`storyvoid_unlocked_${email}`);
-      setUnlockedEpisodes(saved ? JSON.parse(saved) : {});
-    } catch {
-      setUnlockedEpisodes({});
-    }
+    await fetchUserWallet(user.id);
   };
 
+  // APP INITIALIZATION
   useEffect(() => {
-    const timer = setTimeout(() => {
+    const splashTimer = setTimeout(() => {
       setShowSplash(false);
     }, 2500);
 
     fetchStories();
 
-    // Auth state listener.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      applyAuthUser(session?.user || null);
-      setAuthReady(true);
+      setTimeout(() => {
+        void applyAuthUser(session?.user || null);
+      }, 0);
     });
 
-    // Existing Supabase session restore.
     const restoreSession = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
 
-        if (error) throw error;
-
-        applyAuthUser(data.session?.user || null);
-      } catch (err) {
-        console.error('Session restore error:', err);
-        applyAuthUser(null);
+        await applyAuthUser(session?.user || null);
+      } catch (error) {
+        console.error('Session restore error:', error);
       } finally {
         setAuthReady(true);
       }
     };
 
-    restoreSession();
+    void restoreSession();
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(splashTimer);
       subscription.unsubscribe();
     };
   }, []);
 
-  // AuthScreen already Supabase login karta hai.
-  // Yahan session verify karke user state update karte hain.
-  const handleLogin = async (email: string, _pass: string) => {
+  // LOGIN
+  const handleLogin = async (_email: string, _pass: string) => {
     try {
-      const { data, error } = await supabase.auth.getSession();
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
 
       if (error) throw error;
 
-      if (!data.session?.user) {
-        showAppAlert(
-          'Login Error',
-          'Supabase session not found. Please login again.',
-          false
+      if (session?.user) {
+        await applyAuthUser(session.user);
+
+        showMessage(
+          'Welcome to STORYVOID',
+          'You are successfully logged in!',
+          true
         );
-        return;
       }
-
-      applyAuthUser(data.session.user);
-
-      const isAdminUser =
-        data.session.user.app_metadata?.role === 'admin';
-
-      showAppAlert(
-        isAdminUser ? 'Welcome Admin' : 'Welcome Listener',
-        isAdminUser
-          ? 'Administrator login successful.'
-          : 'Logged in successfully.'
-      );
-    } catch (err) {
-      console.error('Login verification error:', err);
-      showAppAlert(
+    } catch (error: any) {
+      showMessage(
         'Login Error',
-        'Unable to verify your account. Please try again.',
-        false
+        error.message || 'Unable to login.'
       );
     }
   };
 
+  // LOGOUT
   const handleLogout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
+      await supabase.auth.signOut();
 
-      if (error) throw error;
+      await applyAuthUser(null);
 
-      applyAuthUser(null);
-
-      setActiveTab('home');
-      setSelectedStoryTitle(null);
       setCurrentPlayingEpisode(null);
       setCurrentPlaylist([]);
       setCurrentIndex(0);
@@ -218,25 +228,16 @@ export default function App() {
         audioRef.current.src = '';
       }
 
-      localStorage.removeItem('storyvoid_logged_in');
-      localStorage.removeItem('storyvoid_email');
-      localStorage.removeItem('storyvoid_is_admin');
-
-      showAppAlert('Logged Out', 'You have been logged out successfully.');
-    } catch (err) {
-      console.error('Logout error:', err);
-      showAppAlert(
+      setActiveTab('home');
+    } catch (error: any) {
+      showMessage(
         'Logout Error',
-        'Unable to logout. Please try again.',
-        false
+        error.message || 'Unable to logout.'
       );
     }
   };
 
-  // ---------------------------------------
-  // STORIES
-  // ---------------------------------------
-
+  // FETCH STORIES
   const fetchStories = async () => {
     try {
       setLoadingStories(true);
@@ -248,630 +249,658 @@ export default function App() {
 
       if (error) throw error;
 
-      if (data) {
-        setStories(data);
-      }
-    } catch (err) {
-      console.error('Error fetching stories:', err);
+      setStories(data || []);
+    } catch (error) {
+      console.error('Stories loading error:', error);
     } finally {
       setLoadingStories(false);
     }
   };
-
-  // ---------------------------------------
-  // TEMPORARY LOCAL COINS
-  // ---------------------------------------
-
-  const saveLocalCoins = (newCoins: number, email: string) => {
-    if (!email) return;
-
-    localStorage.setItem(
-      `storyvoid_coins_${email}`,
-      String(newCoins)
+    // WATCH AD
+  // Real ad network connect hone ke baad hi coins reward diye jayenge.
+  const watchAdForCoins = () => {
+    showMessage(
+      'Ad Reward Not Connected',
+      'Watch Ads feature abhi connect nahi hai. Coins abhi ads dekhne par nahi milenge.'
     );
   };
 
-  const watchAdForCoins = async () => {
-    const updatedCoins = coins + 20;
-
-    setCoins(updatedCoins);
-    saveLocalCoins(updatedCoins, userEmail);
-
-    showAppAlert(
-      'Coins Added',
-      '🎉 +20 coins added to your wallet.'
+  // BUY COINS
+  const handleBuyCoins = () => {
+    showMessage(
+      'Coming Soon',
+      'Coin purchase aur payment system jald hi available hoga.'
     );
   };
 
-  const handleBuyCoins = async (
-    coinsToAdd: number,
-    amount: number
-  ) => {
-    // NOTE: Actual payment verification abhi implemented nahi hai.
-    showAppAlert(
-      'Payment Not Connected',
-      'Real coin purchases are not available yet. Payment verification will be added later.',
-      false
-    );
-  };
-
-  const handleUnlockEpisode = async (ep: any, price: number) => {
-    if (coins < price) {
-      showAppAlert(
-        'Insufficient Coins',
-        `❌ You need ${price} coins to unlock this episode. Watch an ad or buy coins from store!`,
-        false
+  // UNLOCK EPISODE USING SUPABASE RPC
+  const handleUnlockEpisode = async (
+    episodeId: string,
+    price: number
+  ): Promise<boolean> => {
+    if (!isLoggedIn) {
+      showMessage(
+        'Login Required',
+        'Episode unlock karne ke liye pehle login karo.'
       );
       return false;
     }
 
-    const updatedCoins = coins - price;
-
-    setCoins(updatedCoins);
-    saveLocalCoins(updatedCoins, userEmail);
-
-    const newUnlocked = {
-      ...unlockedEpisodes,
-      [ep.id]: true,
-    };
-
-    setUnlockedEpisodes(newUnlocked);
-
-    if (userEmail) {
-      localStorage.setItem(
-        `storyvoid_unlocked_${userEmail}`,
-        JSON.stringify(newUnlocked)
-      );
+    if (unlockedEpisodes[episodeId]) {
+      return true;
     }
 
-    return true;
-  };
-
-  // ---------------------------------------
-  // AUDIO PLAYER
-  // ---------------------------------------
-
-  const handleEpisodeAction = (
-    ep: any,
-    allSeriesEpisodes: any[],
-    index: number
-  ) => {
-    setCurrentPlaylist(allSeriesEpisodes);
-    setCurrentIndex(index);
-    playAudio(ep);
-    saveListeningHistory(ep);
-  };
-
-  const saveListeningHistory = (ep: any) => {
     try {
-      const savedHistory = localStorage.getItem(
-        'storyvoid_listening_history'
+      const { data, error } = await supabase.rpc(
+        'unlock_episode_with_coins',
+        {
+          p_episode_id: episodeId,
+        }
       );
 
-      let historyList: any[] = savedHistory
-        ? JSON.parse(savedHistory)
-        : [];
+      if (error) {
+        console.error('Episode unlock error:', error);
 
-      historyList = historyList.filter(
-        (item) => item.id !== ep.id
-      );
+        showMessage(
+          'Unlock Failed',
+          'Episode unlock nahi ho paya. Dobara try karo.'
+        );
 
-      historyList.unshift({
-        id: ep.id,
-        title: ep.title,
-        episode_title: ep.episode_title,
-        poster_url: ep.poster_url,
-        genre: ep.genre,
-      });
-
-      if (historyList.length > 20) {
-        historyList.pop();
+        return false;
       }
+
+      const result = Array.isArray(data) ? data[0] : data;
+
+      if (!result) {
+        showMessage(
+          'Unlock Failed',
+          'Server se valid response nahi mila.'
+        );
+
+        return false;
+      }
+
+      if (result.balance !== null && result.balance !== undefined) {
+        setCoins(Number(result.balance));
+      }
+
+      if (
+        result.message === 'unlocked' ||
+        result.message === 'already_unlocked'
+      ) {
+        setUnlockedEpisodes((previous) => ({
+          ...previous,
+          [episodeId]: true,
+        }));
+
+        if (result.message === 'unlocked') {
+          showMessage(
+            'Episode Unlocked!',
+            `Episode successfully unlock ho gaya. ${price} coins use hue.`,
+            true
+          );
+        }
+
+        return true;
+      }
+
+      if (result.message === 'insufficient_coins') {
+        showMessage(
+          'Insufficient Coins',
+          'Aapke paas is episode ko unlock karne ke liye enough coins nahi hain.'
+        );
+
+        return false;
+      }
+
+      if (result.message === 'not_logged_in') {
+        showMessage(
+          'Login Required',
+          'Episode unlock karne ke liye login karo.'
+        );
+
+        return false;
+      }
+
+      if (result.message === 'user_record_not_found') {
+        showMessage(
+          'Account Error',
+          'Aapka wallet record nahi mila. Please dobara login karo.'
+        );
+
+        return false;
+      }
+
+      if (result.message === 'episode_not_found') {
+        showMessage(
+          'Episode Not Found',
+          'Ye episode ab available nahi hai.'
+        );
+
+        return false;
+      }
+
+      showMessage(
+        'Unlock Failed',
+        result.message || 'Episode unlock nahi ho paya.'
+      );
+
+      return false;
+    } catch (error: any) {
+      console.error('Unlock exception:', error);
+
+      showMessage(
+        'Error',
+        error.message || 'Something went wrong.'
+      );
+
+      return false;
+    }
+  };
+
+  // LISTENING HISTORY
+  const saveListeningHistory = (episode: any) => {
+    try {
+      const oldHistory = JSON.parse(
+        localStorage.getItem('storyvoid_listening_history') || '[]'
+      );
+
+      const filteredHistory = oldHistory.filter(
+        (item: any) => item.id !== episode.id
+      );
+
+      filteredHistory.unshift({
+        ...episode,
+        listenedAt: new Date().toISOString(),
+      });
 
       localStorage.setItem(
         'storyvoid_listening_history',
-        JSON.stringify(historyList)
+        JSON.stringify(filteredHistory.slice(0, 20))
       );
-    } catch (err) {
-      console.error('Error saving history:', err);
+    } catch (error) {
+      console.error('Listening history error:', error);
     }
   };
 
-  const playAudio = (ep: any) => {
-    setCurrentPlayingEpisode(ep);
+  // PLAY AUDIO
+  const playAudio = (episode: any) => {
+    if (!episode) return;
+
+    if (!episode.audio_url) {
+      showMessage(
+        'Audio Unavailable',
+        'Is episode ka audio abhi available nahi hai.'
+      );
+
+      setIsPlaying(false);
+      return;
+    }
+
+    setCurrentPlayingEpisode(episode);
     setIsPlaying(true);
 
     if (audioRef.current) {
-      audioRef.current.src = ep.audio_url || '';
+      audioRef.current.src = episode.audio_url;
+      audioRef.current.load();
 
-      audioRef.current
-        .play()
-        .catch((e) => {
-          console.log('Audio play error:', e);
+      const playPromise = audioRef.current.play();
+
+      if (playPromise) {
+        playPromise.catch((error) => {
+          console.error('Audio play error:', error);
           setIsPlaying(false);
         });
+      }
     }
   };
 
+  // EPISODE ACTION
+  const handleEpisodeAction = async (
+    episode: any,
+    playlist: any[] = []
+  ) => {
+    if (!episode) return;
+
+    const episodePrice = Number(episode.coin_price || 0);
+
+    if (
+      episodePrice > 0 &&
+      !unlockedEpisodes[episode.id]
+    ) {
+      const unlocked = await handleUnlockEpisode(
+        episode.id,
+        episodePrice
+      );
+
+      if (!unlocked) return;
+    }
+
+    const selectedPlaylist =
+      playlist.length > 0 ? playlist : [episode];
+
+    const selectedIndex = selectedPlaylist.findIndex(
+      (item: any) => item.id === episode.id
+    );
+
+    setCurrentPlaylist(selectedPlaylist);
+    setCurrentIndex(selectedIndex >= 0 ? selectedIndex : 0);
+
+    playAudio(episode);
+    saveListeningHistory(episode);
+  };
+
+  // PLAY / PAUSE
   const togglePlayPause = () => {
     if (!audioRef.current) return;
 
-    if (isPlaying) {
+    if (audioRef.current.paused) {
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch((error) => {
+          console.error('Audio resume error:', error);
+          setIsPlaying(false);
+        });
+    } else {
       audioRef.current.pause();
       setIsPlaying(false);
-    } else {
-      audioRef.current
-        .play()
-        .then(() => setIsPlaying(true))
-        .catch((err) => console.log('Audio play error:', err));
     }
   };
 
-  const playNext = () => {
+  // NEXT EPISODE
+  const handleNextEpisode = () => {
     if (currentIndex < currentPlaylist.length - 1) {
-      const nextIdx = currentIndex + 1;
+      const nextIndex = currentIndex + 1;
+      const nextEpisode = currentPlaylist[nextIndex];
 
-      handleEpisodeAction(
-        currentPlaylist[nextIdx],
-        currentPlaylist,
-        nextIdx
-      );
-    } else {
-      showAppAlert(
-        'Playback Info',
-        '✨ This is the last episode of the series!'
-      );
+      setCurrentIndex(nextIndex);
+      playAudio(nextEpisode);
+      saveListeningHistory(nextEpisode);
     }
   };
 
-  const playPrev = () => {
+  // PREVIOUS EPISODE
+  const handlePreviousEpisode = () => {
     if (currentIndex > 0) {
-      const prevIdx = currentIndex - 1;
+      const previousIndex = currentIndex - 1;
+      const previousEpisode = currentPlaylist[previousIndex];
 
-      handleEpisodeAction(
-        currentPlaylist[prevIdx],
-        currentPlaylist,
-        prevIdx
-      );
-    } else {
-      showAppAlert(
-        'Playback Info',
-        '✨ This is the first episode!'
-      );
+      setCurrentIndex(previousIndex);
+      playAudio(previousEpisode);
+      saveListeningHistory(previousEpisode);
     }
   };
 
-  // ---------------------------------------
-  // SERIES DATA
-  // ---------------------------------------
-
-  const uniqueSeriesMap = new Map();
-
-  stories.forEach((item) => {
-    if (item.title && !uniqueSeriesMap.has(item.title)) {
-      uniqueSeriesMap.set(item.title, {
-        title: item.title,
-        genre: item.genre || 'Thriller',
-        description: item.description,
-        poster_url:
-          item.poster_url ||
-          'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400',
-        episodesCount: 1,
-      });
-    } else if (item.title) {
-      uniqueSeriesMap.get(item.title).episodesCount += 1;
+  // AUDIO ENDED
+  const handleAudioEnded = () => {
+    if (currentIndex < currentPlaylist.length - 1) {
+      handleNextEpisode();
+    } else {
+      setIsPlaying(false);
     }
-  });
+  };
 
-  const uniqueSeriesList = Array.from(uniqueSeriesMap.values());
+  // GROUP EPISODES INTO STORIES
+  const groupedStories = stories.reduce(
+    (groups: Record<string, any>, episode: any) => {
+      const title = episode.title || 'Untitled Story';
 
-  const filteredSeriesList =
+      if (!groups[title]) {
+        groups[title] = {
+          title,
+          genre: episode.genre || 'Drama',
+          description: episode.description || '',
+          poster_url: episode.poster_url || episode.cover_url || '',
+          cover_url: episode.cover_url || episode.poster_url || '',
+          episodes: [],
+        };
+      }
+
+      groups[title].episodes.push(episode);
+
+      return groups;
+    },
+    {}
+  );
+
+  const series = Object.values(groupedStories).map(
+    (story: any) => ({
+      ...story,
+      episodes: story.episodes.sort(
+        (a: any, b: any) =>
+          Number(a.episode_number || 1) -
+          Number(b.episode_number || 1)
+      ),
+      episodesCount: story.episodes.length,
+    })
+  );
+
+  // FEATURED STORY
+  const featuredStory = series[0] || null;
+
+  // PROMO BANNER
+  const promoBanner = {
+    title: 'Discover Your Next Adventure',
+    subtitle: 'Listen to amazing stories on STORYVOID',
+  };
+
+  // SELECTED STORY
+  const selectedStory = series.find(
+    (story: any) => story.title === selectedStoryTitle
+  );
+
+  // FILTER STORIES BY GENRE
+  const filteredStories =
     selectedGenreFilter === 'All'
-      ? uniqueSeriesList
-      : uniqueSeriesList.filter(
-          (s: any) =>
-            s.genre?.toLowerCase() ===
+      ? series
+      : series.filter(
+          (story: any) =>
+            story.genre?.toLowerCase() ===
             selectedGenreFilter.toLowerCase()
         );
-
-  const featuredTitle = localStorage.getItem(
-    'storyvoid_featured_title'
-  );
-
-  const customBannerImg = localStorage.getItem(
-    'storyvoid_custom_banner_image'
-  );
-
-  const featuredStoryData = uniqueSeriesList.find(
-    (s: any) => s.title === featuredTitle
-  );
-
-  const promoTitle = localStorage.getItem(
-    'storyvoid_promo_title'
-  );
-
-  const promoMedia = localStorage.getItem(
-    'storyvoid_promo_media'
-  );
-
-  const promoLink = localStorage.getItem(
-    'storyvoid_promo_link'
-  );
-
-  // ---------------------------------------
-  // LOADING / AUTH SCREENS
-  // ---------------------------------------
-
-  if (showSplash || !authReady) {
+    // SPLASH SCREEN
+  if (showSplash) {
     return <SplashScreen />;
+  }
+
+  // AUTH SCREEN
+  if (!authReady) {
+    return (
+      <div className="min-h-screen bg-[#0D0F14] flex items-center justify-center text-white">
+        Loading STORYVOID...
+      </div>
+    );
   }
 
   if (!isLoggedIn) {
     return <AuthScreen onLogin={handleLogin} />;
   }
 
-  // ---------------------------------------
-  // MAIN APP UI
-  // ---------------------------------------
-
   return (
-    <div className="bg-[#0f0d13] min-h-screen text-white font-sans pb-40 selection:bg-orange-500">
-
-      <NotificationModal
-        isOpen={modalConfig.isOpen}
-        title={modalConfig.title}
-        message={modalConfig.message}
-        isSuccess={modalConfig.isSuccess}
-        onClose={() =>
-          setModalConfig((prev) => ({
-            ...prev,
-            isOpen: false,
-          }))
-        }
-      />
-
-      <CoinStoreModal
-        isOpen={isCoinStoreOpen}
-        onClose={() => setIsCoinStoreOpen(false)}
-        onBuyCoins={handleBuyCoins}
-      />
-
-      <div className="flex justify-between items-center p-4 border-b border-gray-800 bg-[#121017]">
-        <div>
-          <h1 className="text-xl font-extrabold tracking-wider text-orange-500">
-            STORYVOID
+    <div className="min-h-screen bg-[#0D0F14] text-white pb-28">
+      {/* HEADER */}
+      <header className="sticky top-0 z-40 bg-[#0D0F14]/95 backdrop-blur-md border-b border-white/10 px-4 py-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-black tracking-widest text-white">
+            STORY<span className="text-purple-500">VOID</span>
           </h1>
-          <p className="text-[10px] text-gray-400">
-            SERIALIZED AUDIO
-          </p>
+
+          <button
+            onClick={() => setIsCoinStoreOpen(true)}
+            className="bg-yellow-500/10 border border-yellow-500/30 rounded-full px-4 py-2 text-yellow-400 font-bold"
+          >
+            🪙 {coins}
+          </button>
         </div>
+      </header>
 
-        <div
-          onClick={() => setIsCoinStoreOpen(true)}
-          className="flex items-center bg-gray-800 px-3.5 py-1.5 rounded-full border border-gray-700 cursor-pointer hover:border-orange-500 transition-all shadow-md"
-        >
-          <span className="text-yellow-400 mr-1.5">🟡</span>
-          <span className="text-xs font-semibold">
-            {coins} Coins
-          </span>
-          <span className="ml-1.5 text-[10px] bg-orange-500 text-white px-1.5 py-0.5 rounded-full font-bold">
-            +
-          </span>
-        </div>
-      </div>
+      {/* AUDIO ELEMENT */}
+      <audio
+        ref={audioRef}
+        onEnded={handleAudioEnded}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+      />
 
-      <audio ref={audioRef} onEnded={playNext} />
-
-      {activeTab === 'home' && (
-        <div className="p-4 space-y-4">
-          {selectedStoryTitle ? (
-            <EpisodeList
-              selectedStoryTitle={selectedStoryTitle}
-              stories={stories}
-              unlockedEpisodes={unlockedEpisodes}
-              onBack={() => setSelectedStoryTitle(null)}
-              onEpisodeAction={handleEpisodeAction}
-              coins={coins}
-              onUnlockEpisode={handleUnlockEpisode}
-            />
-          ) : (
+      <main className="p-4">
+        {/* HOME */}
+        {activeTab === 'home' && (
+          <div className="space-y-6">
             <div>
-              <div className="flex overflow-x-auto space-x-2 pb-2 mb-4 scrollbar-none">
-                {genresList.map((genre, idx) => (
+              <h2 className="text-2xl font-bold">
+                Welcome to STORYVOID
+              </h2>
+              <p className="text-gray-400 mt-1">
+                {promoBanner.subtitle}
+              </p>
+            </div>
+
+            <div className="rounded-2xl bg-gradient-to-r from-purple-900 to-indigo-900 p-5">
+              <p className="text-sm text-purple-200">
+                FEATURED STORY
+              </p>
+
+              <h2 className="text-2xl font-bold mt-2">
+                {featuredStory?.title || 'Discover Amazing Stories'}
+              </h2>
+
+              <p className="text-gray-300 text-sm mt-2">
+                {featuredStory?.description || promoBanner.title}
+              </p>
+
+              {featuredStory && (
+                <button
+                  onClick={() =>
+                    setSelectedStoryTitle(featuredStory.title)
+                  }
+                  className="mt-4 bg-white text-black rounded-full px-5 py-2 font-bold"
+                >
+                  Explore Story
+                </button>
+              )}
+            </div>
+
+            <button
+              onClick={watchAdForCoins}
+              className="w-full rounded-xl bg-yellow-500/10 border border-yellow-500/30 p-4 text-left"
+            >
+              <p className="font-bold text-yellow-400">
+                🪙 Get Free Coins
+              </p>
+              <p className="text-sm text-gray-400 mt-1">
+                Watch an ad to earn coins (coming soon).
+              </p>
+            </button>
+
+            <div>
+              <h2 className="text-xl font-bold mb-3">
+                Browse Genres
+              </h2>
+
+              <div className="flex gap-2 overflow-x-auto pb-3">
+                {genres.map((genre) => (
                   <button
-                    key={idx}
-                    onClick={() => setSelectedGenreFilter(genre)}
-                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap transition-all cursor-pointer ${
+                    key={genre}
+                    onClick={() => {
+                      setSelectedGenreFilter(genre);
+                      setSelectedStoryTitle('');
+                    }}
+                    className={`px-4 py-2 rounded-full whitespace-nowrap ${
                       selectedGenreFilter === genre
-                        ? 'bg-orange-500 text-white shadow-md'
-                        : 'bg-[#16131c] text-gray-400 border border-gray-800 hover:text-white'
+                        ? 'bg-purple-600 text-white'
+                        : 'bg-white/10 text-gray-300'
                     }`}
                   >
                     {genre}
                   </button>
                 ))}
               </div>
-
-              {promoMedia ? (
-                <div
-                  onClick={() => {
-                    if (promoLink) {
-                      window.open(promoLink, '_blank');
-                    }
-                  }}
-                  className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 h-44 flex flex-col justify-end p-4 cursor-pointer shadow-xl group hover:border-orange-500 transition-all bg-[#16131c]"
-                >
-                  {promoMedia.match(/\.(mp4|webm|ogg)$/i) ||
-                  promoMedia.includes('video') ? (
-                    <video
-                      src={promoMedia}
-                      autoPlay
-                      loop
-                      muted
-                      playsInline
-                      className="absolute inset-0 w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div
-                      className="absolute inset-0 bg-cover bg-center"
-                      style={{
-                        backgroundImage: `url(${promoMedia})`,
-                      }}
-                    />
-                  )}
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0f0d13] via-[#0f0d13]/50 to-transparent" />
-
-                  <div className="relative z-10 space-y-1">
-                    <span className="text-[9px] bg-red-600 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">
-                      📢 Sponsored Promo / Ad
-                    </span>
-
-                    <h3 className="text-base font-black text-white">
-                      {promoTitle || 'Special Promotion'}
-                    </h3>
-
-                    <div className="pt-1">
-                      <span className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-1.5 rounded-xl text-[11px] shadow-md transition-all inline-block">
-                        🔗 Tap to Visit Link
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : featuredStoryData ? (
-                <div
-                  onClick={() =>
-                    setSelectedStoryTitle(featuredStoryData.title)
-                  }
-                  className="relative rounded-2xl overflow-hidden border border-orange-500/40 mb-4 h-44 flex flex-col justify-end p-4 cursor-pointer shadow-xl group hover:border-orange-500 transition-all bg-cover bg-center"
-                  style={{
-                    backgroundImage: `url(${
-                      customBannerImg || featuredStoryData.poster_url
-                    })`,
-                  }}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0f0d13] via-[#0f0d13]/70 to-transparent" />
-
-                  <div className="relative z-10 space-y-1">
-                    <span className="text-[9px] bg-orange-500 text-white px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">
-                      🔥 Trending & Featured
-                    </span>
-
-                    <h3 className="text-base font-black text-white">
-                      {featuredStoryData.title}
-                    </h3>
-
-                    <p className="text-[10px] text-gray-300 line-clamp-1 leading-relaxed">
-                      {featuredStoryData.description ||
-                        'Listen to this amazing audio series now.'}
-                    </p>
-
-                    <div className="pt-1">
-                      <span className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-4 py-1.5 rounded-xl text-[11px] shadow-md transition-all inline-block">
-                        ✨ Play Now
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              ) : null}
-
-              <div className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 mb-6 flex justify-between items-center shadow-md">
-                <div>
-                  <h3 className="text-xs font-bold text-yellow-400 uppercase tracking-wide">
-                    🟡 Earn Free Coins
-                  </h3>
-                  <p className="text-[11px] text-gray-300">
-                    Watch a short ad to get +20 coins.
-                  </p>
-                </div>
-
-                <button
-                  onClick={watchAdForCoins}
-                  className="bg-yellow-500 hover:bg-yellow-600 text-black font-bold px-4 py-2 rounded-xl text-xs transition-all shadow-md cursor-pointer"
-                >
-                  Watch Ad
-                </button>
-              </div>
-
-              <div className="flex justify-between items-center mb-3">
-                <h3 className="text-xs font-bold text-gray-300 uppercase tracking-wide">
-                  {selectedGenreFilter === 'All'
-                    ? 'All Audio Series'
-                    : `${selectedGenreFilter} Series`}
-                </h3>
-
-                <button
-                  onClick={fetchStories}
-                  className="text-[10px] text-orange-400 underline cursor-pointer"
-                >
-                  Refresh
-                </button>
-              </div>
-
-              {loadingStories ? (
-                <p className="text-xs text-gray-400 text-center py-6">
-                  Loading series...
-                </p>
-              ) : filteredSeriesList.length === 0 ? (
-                <div className="bg-[#16131c] p-4 rounded-xl border border-gray-800 text-center">
-                  <p className="text-xs text-gray-400 mb-2">
-                    No series found in this genre.
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-3">
-                  {filteredSeriesList.map((series: any, idx: number) => (
-                    <div
-                      key={idx}
-                      onClick={() =>
-                        setSelectedStoryTitle(series.title)
-                      }
-                      className="bg-[#16131c] rounded-xl p-2.5 border border-gray-800 cursor-pointer hover:border-orange-500 transition-all shadow-md"
-                    >
-                      <img
-                        src={series.poster_url}
-                        alt="Poster"
-                        className="h-36 w-full object-cover rounded-lg mb-2 border border-gray-700"
-                      />
-
-                      <span className="text-[9px] bg-orange-900/60 text-orange-300 px-2.5 py-0.5 rounded-full font-bold inline-block">
-                        {series.genre}
-                      </span>
-
-                      <h4 className="text-xs font-bold truncate mt-1 text-white">
-                        {series.title}
-                      </h4>
-
-                      <p className="text-[10px] text-gray-400 mt-0.5">
-                        {series.episodesCount} Episodes
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
-          )}
-        </div>
-      )}
 
-      {activeTab === 'search' && (
-        <SearchView
-          stories={stories}
-          unlockedEpisodes={unlockedEpisodes}
-          coins={coins}
-          onEpisodeAction={handleEpisodeAction}
-          onUnlockEpisode={handleUnlockEpisode}
-        />
-      )}
+            {selectedStory ? (
+              <div>
+                <button
+                  onClick={() => setSelectedStoryTitle('')}
+                  className="text-purple-400 mb-4"
+                >
+                  ← Back to Stories
+                </button>
 
-      {activeTab === 'library' && (
-        <LibraryView
-          stories={stories}
-          unlockedEpisodes={unlockedEpisodes}
-          coins={coins}
-          onEpisodeAction={handleEpisodeAction}
-          onUnlockEpisode={handleUnlockEpisode}
-        />
-      )}
+                <h2 className="text-xl font-bold mb-2">
+                  {selectedStory.title}
+                </h2>
 
-      {activeTab === 'profile' && (
-        <ProfileView
-          userEmail={userEmail}
-          isAdmin={isAdmin}
-          onLogout={handleLogout}
-          onOpenCoinStore={() => setIsCoinStoreOpen(true)}
-          onWatchAd={watchAdForCoins}
-          coins={coins}
-        />
-      )}
+                <EpisodeList
+                  episodes={selectedStory.episodes}
+                  onEpisodeClick={(episode: any) =>
+                    handleEpisodeAction(
+                      episode,
+                      selectedStory.episodes
+                    )
+                  }
+                  unlockedEpisodes={unlockedEpisodes}
+                />
+              </div>
+            ) : (
+              <div>
+                <h2 className="text-xl font-bold mb-4">
+                  {selectedGenreFilter === 'All'
+                    ? 'All Stories'
+                    : selectedGenreFilter + ' Stories'}
+                </h2>
 
-      {activeTab === 'admin' && isAdmin && (
-        <div className="p-4 pb-12">
+                {loadingStories ? (
+                  <p className="text-gray-400">
+                    Loading stories...
+                  </p>
+                ) : filteredStories.length === 0 ? (
+                  <p className="text-gray-400">
+                    No stories available.
+                  </p>
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {filteredStories.map((story: any) => (
+                      <button
+                        key={story.title}
+                        onClick={() =>
+                          setSelectedStoryTitle(story.title)
+                        }
+                        className="text-left rounded-xl overflow-hidden bg-white/5 border border-white/10"
+                      >
+                        {story.cover_url ? (
+                          <img
+                            src={story.cover_url}
+                            alt={story.title}
+                            className="w-full aspect-[3/4] object-cover"
+                          />
+                        ) : (
+                          <div className="w-full aspect-[3/4] bg-gradient-to-br from-purple-900 to-gray-900 flex items-center justify-center">
+                            <span className="text-3xl">🎧</span>
+                          </div>
+                        )}
+
+                        <div className="p-3">
+                          <h3 className="font-bold line-clamp-2">
+                            {story.title}
+                          </h3>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {story.genre} • {story.episodesCount} Episodes
+                          </p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* SEARCH */}
+        {activeTab === 'search' && (
+          <SearchView
+            stories={stories}
+            onEpisodeClick={(episode: any) =>
+              handleEpisodeAction(episode)
+            }
+          />
+        )}
+
+        {/* LIBRARY */}
+        {activeTab === 'library' && (
+          <LibraryView
+            onEpisodeClick={(episode: any) =>
+              handleEpisodeAction(episode)
+            }
+          />
+        )}
+
+        {/* PROFILE */}
+        {activeTab === 'profile' && (
+          <ProfileView
+            userEmail={userEmail}
+            coins={coins}
+            onLogout={handleLogout}
+            onOpenCoinStore={() => setIsCoinStoreOpen(true)}
+          />
+        )}
+
+        {/* ADMIN */}
+        {activeTab === 'admin' && isAdmin && (
           <AdminPanel
             stories={stories}
             fetchStories={fetchStories}
-            setSuccessMessage={(msg) =>
-              showAppAlert('Success', msg)
+            setSuccessMessage={(message: string) =>
+              showMessage('Success', message, true)
             }
+          />
+        )}
+      </main>
+
+      {/* AUDIO PLAYER */}
+      {currentPlayingEpisode && (
+        <div className="fixed bottom-[68px] left-0 right-0 z-40">
+          <AudioPlayer
+            episode={currentPlayingEpisode}
+            isPlaying={isPlaying}
+            onPlayPause={togglePlayPause}
+            onNext={handleNextEpisode}
+            onPrevious={handlePreviousEpisode}
           />
         </div>
       )}
 
-      <AudioPlayer
-        currentPlayingEpisode={currentPlayingEpisode}
-        isPlaying={isPlaying}
-        togglePlayPause={togglePlayPause}
-        playNext={playNext}
-        playPrev={playPrev}
-        audioRef={audioRef}
-      />
-
-      <div className="fixed bottom-0 left-0 right-0 bg-[#121017] border-t border-gray-800 flex justify-around py-3 px-2 z-50">
-        <button
-          onClick={() => {
-            setActiveTab('home');
-            setSelectedStoryTitle(null);
-          }}
-          className={`flex flex-col items-center text-xs cursor-pointer ${
-            activeTab === 'home'
-              ? 'text-orange-500 font-bold'
-              : 'text-gray-400'
-          }`}
-        >
-          <span>🏠</span>
-          <span className="text-[10px] mt-1">HOME</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('search')}
-          className={`flex flex-col items-center text-xs cursor-pointer ${
-            activeTab === 'search'
-              ? 'text-orange-500 font-bold'
-              : 'text-gray-400'
-          }`}
-        >
-          <span>🔍</span>
-          <span className="text-[10px] mt-1">SEARCH</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('library')}
-          className={`flex flex-col items-center text-xs cursor-pointer ${
-            activeTab === 'library'
-              ? 'text-orange-500 font-bold'
-              : 'text-gray-400'
-          }`}
-        >
-          <span>📚</span>
-          <span className="text-[10px] mt-1">LIBRARY</span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('profile')}
-          className={`flex flex-col items-center text-xs cursor-pointer ${
-            activeTab === 'profile'
-              ? 'text-orange-500 font-bold'
-              : 'text-gray-400'
-          }`}
-        >
-          <span>👤</span>
-          <span className="text-[10px] mt-1">PROFILE</span>
-        </button>
-
-        {isAdmin && (
+      {/* BOTTOM NAVIGATION */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#151720] border-t border-white/10 flex justify-around py-3">
+        {[
+          { id: 'home', label: 'Home', icon: '🏠' },
+          { id: 'search', label: 'Search', icon: '🔍' },
+          { id: 'library', label: 'Library', icon: '📚' },
+          { id: 'profile', label: 'Profile', icon: '👤' },
+          ...(isAdmin
+            ? [{ id: 'admin', label: 'Admin', icon: '⚙️' }]
+            : []),
+        ].map((tab: any) => (
           <button
-            onClick={() => setActiveTab('admin')}
-            className={`flex flex-col items-center text-xs cursor-pointer ${
-              activeTab === 'admin'
-                ? 'text-orange-500 font-bold'
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex flex-col items-center gap-1 text-xs ${
+              activeTab === tab.id
+                ? 'text-purple-400'
                 : 'text-gray-400'
             }`}
           >
-            <span>🛠️</span>
-            <span className="text-[10px] mt-1">ADMIN</span>
+            <span className="text-xl">{tab.icon}</span>
+            {tab.label}
           </button>
-        )}
-      </div>
+        ))}
+      </nav>
+
+      {/* COIN STORE */}
+      {isCoinStoreOpen && (
+        <CoinStoreModal
+          onClose={() => setIsCoinStoreOpen(false)}
+          coins={coins}
+          onBuyCoins={handleBuyCoins}
+        />
+      )}
+
+      {/* MESSAGE MODAL */}
+      {modalConfig.isOpen && (
+        <NotificationModal
+          title={modalConfig.title}
+          message={modalConfig.message}
+          isSuccess={modalConfig.isSuccess}
+          onClose={() =>
+            setModalConfig((previous) => ({
+              ...previous,
+              isOpen: false,
+            }))
+          }
+        />
+      )}
     </div>
   );
-}
+};
+
+export default App;
