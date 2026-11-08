@@ -599,6 +599,31 @@ const App: React.FC = () => {
             selectedGenreFilter.toLowerCase()
         );
     // SPLASH SCREEN
+  // READ EXISTING BANNER SETTINGS — DO NOT MODIFY THEM
+  const savedFeaturedTitle =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('storyvoid_featured_title') || ''
+      : '';
+
+  const customBannerImage =
+    typeof window !== 'undefined'
+      ? localStorage.getItem('storyvoid_custom_banner_image') || ''
+      : '';
+
+  const bannerStory =
+    series.find((story: any) => story.title === savedFeaturedTitle) ||
+    featuredStory;
+
+  const bannerTitle =
+    savedFeaturedTitle || bannerStory?.title || 'Discover Amazing Stories';
+
+  const bannerImage =
+    customBannerImage ||
+    bannerStory?.poster_url ||
+    bannerStory?.cover_url ||
+    '';
+
+  // SPLASH SCREEN
   if (showSplash) {
     return <SplashScreen />;
   }
@@ -606,7 +631,7 @@ const App: React.FC = () => {
   // AUTH SCREEN
   if (!authReady) {
     return (
-      <div className="min-h-screen bg-[#0D0F14] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-[#0e0c12] flex items-center justify-center text-white">
         Loading STORYVOID...
       </div>
     );
@@ -617,24 +642,34 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#0D0F14] text-white pb-28">
+    <div className="min-h-screen bg-[#0e0c12] text-white pb-24">
+
       {/* HEADER */}
-      <header className="sticky top-0 z-40 bg-[#0D0F14]/95 backdrop-blur-md border-b border-white/10 px-4 py-4">
+      <header className="bg-[#100e15] border-b border-[#292431] px-4 py-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-black tracking-widest text-white">
-            STORY<span className="text-purple-500">VOID</span>
-          </h1>
+          <div>
+            <h1 className="text-[25px] leading-none font-black tracking-wide text-[#ff741c]">
+              STORYVOID
+            </h1>
+            <p className="text-[11px] text-gray-400 mt-2 tracking-wider font-bold">
+              SERIALIZED AUDIO
+            </p>
+          </div>
 
           <button
             onClick={() => setIsCoinStoreOpen(true)}
-            className="bg-yellow-500/10 border border-yellow-500/30 rounded-full px-4 py-2 text-yellow-400 font-bold"
+            className="flex items-center gap-2 bg-[#202938] border border-[#343d4c] rounded-full px-4 py-3 text-white"
           >
-            🪙 {coins}
+            <span className="text-2xl">🟡</span>
+            <span className="font-bold text-sm">{coins} Coins</span>
+            <span className="bg-[#ff741c] rounded-full w-7 h-7 flex items-center justify-center font-bold">
+              +
+            </span>
           </button>
         </div>
       </header>
 
-      {/* AUDIO ELEMENT */}
+      {/* AUDIO */}
       <audio
         ref={audioRef}
         onEnded={handleAudioEnded}
@@ -642,91 +677,107 @@ const App: React.FC = () => {
         onPause={() => setIsPlaying(false)}
       />
 
-      <main className="p-4">
+      <main className="px-4 pt-4">
+
         {/* HOME */}
         {activeTab === 'home' && (
           <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold">
-                Welcome to STORYVOID
-              </h2>
-              <p className="text-gray-400 mt-1">
-                {promoBanner.subtitle}
-              </p>
-            </div>
 
-            <div className="rounded-2xl bg-gradient-to-r from-purple-900 to-indigo-900 p-5">
-              <p className="text-sm text-purple-200">
-                FEATURED STORY
-              </p>
-
-              <h2 className="text-2xl font-bold mt-2">
-                {featuredStory?.title || 'Discover Amazing Stories'}
-              </h2>
-
-              <p className="text-gray-300 text-sm mt-2">
-                {featuredStory?.description || promoBanner.title}
-              </p>
-
-              {featuredStory && (
+            {/* GENRES */}
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {genres.map((genre) => (
                 <button
-                  onClick={() =>
-                    setSelectedStoryTitle(featuredStory.title)
-                  }
-                  className="mt-4 bg-white text-black rounded-full px-5 py-2 font-bold"
+                  key={genre}
+                  onClick={() => {
+                    setSelectedGenreFilter(genre);
+                    setSelectedStoryTitle('');
+                  }}
+                  className={`shrink-0 rounded-full px-4 py-3 text-sm font-bold border ${
+                    selectedGenreFilter === genre
+                      ? 'bg-[#ff741c] text-white border-[#ff741c]'
+                      : 'bg-[#17141d] text-gray-400 border-[#302b39]'
+                  }`}
                 >
-                  Explore Story
+                  {genre}
                 </button>
-              )}
+              ))}
             </div>
 
-            <button
-              onClick={watchAdForCoins}
-              className="w-full rounded-xl bg-yellow-500/10 border border-yellow-500/30 p-4 text-left"
-            >
-              <p className="font-bold text-yellow-400">
-                🪙 Get Free Coins
-              </p>
-              <p className="text-sm text-gray-400 mt-1">
-                Watch an ad to earn coins (coming soon).
-              </p>
-            </button>
+            {/* FEATURED BANNER — EXISTING IMAGE SETTING PRESERVED */}
+            {!selectedStory && (
+              <div
+                className="relative w-full overflow-hidden rounded-[25px] border border-[#69422e]"
+                style={{ aspectRatio: '2.05 / 1' }}
+              >
+                {bannerImage && (
+                  <img
+                    src={bannerImage}
+                    alt={bannerTitle}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
 
-            <div>
-              <h2 className="text-xl font-bold mb-3">
-                Browse Genres
-              </h2>
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" />
 
-              <div className="flex gap-2 overflow-x-auto pb-3">
-                {genres.map((genre) => (
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <span className="inline-block rounded-full bg-[#ff741c] px-3 py-1 text-[11px] font-black tracking-wide">
+                    🔥 TRENDING & FEATURED
+                  </span>
+
+                  <h2 className="text-xl font-black mt-3">
+                    {bannerTitle}
+                  </h2>
+
+                  <p className="text-sm text-gray-200 mt-2 line-clamp-2">
+                    {bannerStory?.description || promoBanner.subtitle}
+                  </p>
+
                   <button
-                    key={genre}
                     onClick={() => {
-                      setSelectedGenreFilter(genre);
-                      setSelectedStoryTitle('');
+                      if (bannerStory) {
+                        setSelectedStoryTitle(bannerStory.title);
+                      }
                     }}
-                    className={`px-4 py-2 rounded-full whitespace-nowrap ${
-                      selectedGenreFilter === genre
-                        ? 'bg-purple-600 text-white'
-                        : 'bg-white/10 text-gray-300'
-                    }`}
+                    className="mt-4 rounded-full bg-[#ff741c] px-5 py-3 text-sm font-bold"
                   >
-                    {genre}
+                    ✨ Play Now
                   </button>
-                ))}
+                </div>
               </div>
-            </div>
+            )}
 
+            {/* FREE COINS */}
+            {!selectedStory && (
+              <div className="rounded-[25px] border border-[#302b39] bg-[#17141d] p-4 flex items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-black text-[#ffd329] text-base">
+                    🟡 EARN FREE COINS
+                  </h3>
+                  <p className="text-sm text-gray-300 mt-1">
+                    Watch a short ad to get +20 coins.
+                  </p>
+                </div>
+
+                <button
+                  onClick={watchAdForCoins}
+                  className="shrink-0 rounded-full bg-[#f4bd00] px-5 py-3 text-sm font-black text-black"
+                >
+                  Watch Ad
+                </button>
+              </div>
+            )}
+
+            {/* SELECTED STORY EPISODES */}
             {selectedStory ? (
               <div>
                 <button
                   onClick={() => setSelectedStoryTitle('')}
-                  className="text-purple-400 mb-4"
+                  className="text-[#ff8a43] font-bold mb-4"
                 >
                   ← Back to Stories
                 </button>
 
-                <h2 className="text-xl font-bold mb-2">
+                <h2 className="text-xl font-black mb-4">
                   {selectedStory.title}
                 </h2>
 
@@ -742,19 +793,27 @@ const App: React.FC = () => {
                 />
               </div>
             ) : (
-              <div>
-                <h2 className="text-xl font-bold mb-4">
-                  {selectedGenreFilter === 'All'
-                    ? 'All Stories'
-                    : selectedGenreFilter + ' Stories'}
-                </h2>
+              <>
+                {/* STORY COLLECTION */}
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-black tracking-wide">
+                    ALL AUDIO SERIES
+                  </h2>
+
+                  <button
+                    onClick={fetchStories}
+                    className="text-[#ff984e] text-sm font-bold underline"
+                  >
+                    Refresh
+                  </button>
+                </div>
 
                 {loadingStories ? (
-                  <p className="text-gray-400">
+                  <p className="text-gray-400 text-sm">
                     Loading stories...
                   </p>
                 ) : filteredStories.length === 0 ? (
-                  <p className="text-gray-400">
+                  <p className="text-gray-400 text-sm">
                     No stories available.
                   </p>
                 ) : (
@@ -765,33 +824,39 @@ const App: React.FC = () => {
                         onClick={() =>
                           setSelectedStoryTitle(story.title)
                         }
-                        className="text-left rounded-xl overflow-hidden bg-white/5 border border-white/10"
+                        className="min-w-0 rounded-[22px] border border-[#302b39] bg-[#17141d] p-3 text-left overflow-hidden"
                       >
                         {story.cover_url ? (
                           <img
                             src={story.cover_url}
                             alt={story.title}
-                            className="w-full aspect-[3/4] object-cover"
+                            className="w-full aspect-square rounded-xl object-cover border border-[#393343]"
                           />
                         ) : (
-                          <div className="w-full aspect-[3/4] bg-gradient-to-br from-purple-900 to-gray-900 flex items-center justify-center">
-                            <span className="text-3xl">🎧</span>
+                          <div className="w-full aspect-square rounded-xl bg-[#25202c] flex items-center justify-center">
+                            <span className="text-4xl">🎧</span>
                           </div>
                         )}
 
-                        <div className="p-3">
-                          <h3 className="font-bold line-clamp-2">
-                            {story.title}
-                          </h3>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {story.genre} • {story.episodesCount} Episodes
-                          </p>
-                        </div>
+                        <span className="inline-block mt-3 rounded-full bg-[#542b20] text-[#ffbb83] px-3 py-1 text-[11px] font-bold">
+                          {story.genre || 'Drama'}
+                        </span>
+
+                        <h3 className="font-black text-sm mt-3 truncate">
+                          {story.title}
+                        </h3>
+
+                        <p className="text-xs text-gray-400 mt-1">
+                          {story.episodesCount}{' '}
+                          {story.episodesCount === 1
+                            ? 'Episode'
+                            : 'Episodes'}
+                        </p>
                       </button>
                     ))}
                   </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         )}
@@ -851,22 +916,22 @@ const App: React.FC = () => {
       )}
 
       {/* BOTTOM NAVIGATION */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#151720] border-t border-white/10 flex justify-around py-3">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#100e15] border-t border-[#302b39] flex justify-around py-3">
         {[
-          { id: 'home', label: 'Home', icon: '🏠' },
-          { id: 'search', label: 'Search', icon: '🔍' },
-          { id: 'library', label: 'Library', icon: '📚' },
-          { id: 'profile', label: 'Profile', icon: '👤' },
+          { id: 'home', label: 'HOME', icon: '🏠' },
+          { id: 'search', label: 'SEARCH', icon: '🔍' },
+          { id: 'library', label: 'LIBRARY', icon: '📚' },
+          { id: 'profile', label: 'PROFILE', icon: '👤' },
           ...(isAdmin
-            ? [{ id: 'admin', label: 'Admin', icon: '⚙️' }]
+            ? [{ id: 'admin', label: 'ADMIN', icon: '🛠️' }]
             : []),
         ].map((tab: any) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center gap-1 text-xs ${
+            className={`flex flex-col items-center gap-1 text-xs font-bold ${
               activeTab === tab.id
-                ? 'text-purple-400'
+                ? 'text-[#ff741c]'
                 : 'text-gray-400'
             }`}
           >
