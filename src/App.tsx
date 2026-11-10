@@ -154,6 +154,18 @@ export default function App() {
       const unlocked = await handleUnlockEpisode(episode.id, price);
       if (!unlocked) return;
     }
+
+    if (currentPlayingEpisode?.id === episode.id && audioRef.current) {
+      if (audioRef.current.paused) {
+        audioRef.current.play();
+        setIsPlaying(true);
+      } else {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+      return;
+    }
+
     const list = playlist.length > 0 ? playlist : [episode];
     setCurrentPlaylist(list);
     const foundIndex = list.findIndex(i => i.id === episode.id);
@@ -184,6 +196,8 @@ export default function App() {
     loadingStories,
     onRefresh: fetchStories,
     onSelectStory: (title: string) => setSelectedStoryTitle(title),
+    currentPlayingEpisode,
+    isPlaying,
   };
 
   return (
@@ -228,8 +242,13 @@ export default function App() {
             isPlaying={isPlaying}
             onPlayPause={() => {
               if (!audioRef.current) return;
-              if (audioRef.current.paused) audioRef.current.play();
-              else audioRef.current.pause();
+              if (audioRef.current.paused) {
+                audioRef.current.play();
+                setIsPlaying(true);
+              } else {
+                audioRef.current.pause();
+                setIsPlaying(false);
+              }
             }}
             onNext={() => { 
               if (currentIndex < currentPlaylist.length - 1) {
@@ -255,4 +274,5 @@ export default function App() {
       {modalConfig.isOpen && <NotificationModal {...modalConfig} onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} />}
     </div>
   );
-}
+      }
+        
