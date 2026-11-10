@@ -58,90 +58,73 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         ))}
       </div>
 
-      {/* FEATURED BANNER */}
-      {!selectedStory && (
-        <div
-          className="relative w-full overflow-hidden rounded-2xl border border-[#69422e]"
-          style={{ aspectRatio: '2.05 / 1' }}
-        >
-          {bannerImage && (
-            <img
-              src={bannerImage}
-              alt={bannerTitle}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          )}
-
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" />
-
-          <div className="absolute bottom-0 left-0 right-0 p-3">
-            <span className="inline-block rounded-md bg-[#ff741c] px-2 py-0.5 text-[9px] font-black tracking-wide">
-              🔥 TRENDING & FEATURED
-            </span>
-
-            <h2 className="text-sm font-black mt-1.5 text-white">
-              {bannerTitle}
-            </h2>
-
-            <p className="text-[11px] text-gray-200 mt-1 line-clamp-1">
-              {bannerDescription}
-            </p>
-
-            <button
-              onClick={onPlayFeatured}
-              className="mt-2 rounded-xl bg-[#ff741c] px-3.5 py-1.5 text-xs font-bold cursor-pointer"
-            >
-              ✨ Play Now
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* FREE COINS */}
-      {!selectedStory && (
-        <div className="rounded-2xl border border-[#302b39] bg-[#17141d] p-3 flex items-center justify-between gap-2 shadow-md">
-          <div>
-            <h3 className="font-bold text-[#ffd329] text-xs flex items-center gap-1">
-              🟡 EARN FREE COINS
-            </h3>
-            <p className="text-[10px] text-gray-300 mt-0.5">
-              Watch a short ad to get +20 coins.
-            </p>
-          </div>
-
-          <button
-            onClick={onWatchAd}
-            className="shrink-0 rounded-xl bg-[#f4bd00] px-3.5 py-1.5 text-xs font-black text-black cursor-pointer hover:bg-yellow-400 transition-all"
-          >
-            Watch Ad
-          </button>
-        </div>
-      )}
-
-      {/* SELECTED STORY EPISODES */}
+      {/* SELECTED STORY VIEW (EPISODES & POSTER) */}
       {selectedStory ? (
-        <div>
-          <button
-            onClick={onBackToStories}
-            className="text-[#ff8a43] text-xs font-bold mb-3 cursor-pointer"
-          >
-            ← Back to Stories
-          </button>
-
-          <h2 className="text-base font-black mb-3">
-            {selectedStory.title}
-          </h2>
-
-          <EpisodeList
-            episodes={selectedStory.episodes}
-            onEpisodeClick={(episode: any) =>
-              onEpisodeClick(episode, selectedStory.episodes)
-            }
-            unlockedEpisodes={unlockedEpisodes}
-          />
-        </div>
+        <EpisodeList
+          episodes={selectedStory.episodes}
+          onEpisodeClick={(ep: any, playlist: any[]) => onEpisodeClick(ep, playlist)}
+          unlockedEpisodes={unlockedEpisodes}
+          selectedStory={selectedStory}
+          onBackToStories={onBackToStories}
+        />
       ) : (
         <>
+          {/* FEATURED BANNER */}
+          <div
+            className="relative w-full overflow-hidden rounded-2xl border border-[#69422e]"
+            style={{ aspectRatio: '2.05 / 1' }}
+          >
+            {bannerImage && (
+              <img
+                src={bannerImage}
+                alt={bannerTitle}
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            )}
+
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" />
+
+            <div className="absolute bottom-0 left-0 right-0 p-3">
+              <span className="inline-block rounded-md bg-[#ff741c] px-2 py-0.5 text-[9px] font-black tracking-wide">
+                🔥 TRENDING & FEATURED
+              </span>
+
+              <h2 className="text-sm font-black mt-1.5 text-white">
+                {bannerTitle}
+              </h2>
+
+              <p className="text-[11px] text-gray-200 mt-1 line-clamp-1">
+                {bannerDescription}
+              </p>
+
+              <button
+                onClick={onPlayFeatured}
+                className="mt-2 rounded-xl bg-[#ff741c] px-3.5 py-1.5 text-xs font-bold cursor-pointer"
+              >
+                ✨ Play Now
+              </button>
+            </div>
+          </div>
+
+          {/* FREE COINS */}
+          <div className="rounded-2xl border border-[#302b39] bg-[#17141d] p-3 flex items-center justify-between gap-2 shadow-md">
+            <div>
+              <h3 className="font-bold text-[#ffd329] text-xs flex items-center gap-1">
+                🟡 EARN FREE COINS
+              </h3>
+              <p className="text-[10px] text-gray-300 mt-0.5">
+                Watch a short ad to get +20 coins.
+              </p>
+            </div>
+
+            <button
+              onClick={onWatchAd}
+              className="shrink-0 rounded-xl bg-[#f4bd00] px-3.5 py-1.5 text-xs font-black text-black cursor-pointer hover:bg-yellow-400 transition-all"
+            >
+              Watch Ad
+            </button>
+          </div>
+
           {/* STORY COLLECTION */}
           <div className="flex items-center justify-between mt-2">
             <h2 className="text-xs font-bold text-gray-300 uppercase tracking-wide">
@@ -207,4 +190,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-        
+          
