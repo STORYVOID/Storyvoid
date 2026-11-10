@@ -62,13 +62,13 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
   return (
     <>
-      {/* Mini Player Bar */}
+      {/* Mini Player Bar - Placed exactly above bottom navigation */}
       <div 
         onClick={() => setIsExpanded(true)}
-        className="fixed bottom-14 left-0 right-0 bg-[#1a1721] border-t border-orange-500/50 p-3 px-4 z-30 shadow-2xl flex items-center justify-between cursor-pointer"
+        className="fixed bottom-[52px] left-0 right-0 bg-[#16131c] border-t border-orange-500/40 p-2.5 px-4 z-40 shadow-2xl flex items-center justify-between cursor-pointer"
       >
         <div className="flex items-center space-x-3 truncate">
-          <div className="w-9 h-9 bg-orange-500/20 rounded-lg flex items-center justify-center text-orange-400 font-bold text-xs">
+          <div className="w-9 h-9 bg-orange-500/20 rounded-lg flex items-center justify-center text-orange-400 font-bold text-xs shrink-0">
             ▶
           </div>
           <div className="truncate">
@@ -77,12 +77,12 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center space-x-2" onClick={e => e.stopPropagation()}>
+        <div className="flex items-center space-x-2 shrink-0" onClick={e => e.stopPropagation()}>
           <button 
-            onClick={playPrev}
-            className="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-lg text-xs cursor-pointer"
+            onClick={() => skipTime(-10)}
+            className="bg-gray-800 hover:bg-gray-700 text-white p-1.5 rounded-lg text-[10px] cursor-pointer"
           >
-            ⏮
+            ↺10s
           </button>
           <button 
             onClick={togglePlayPause}
@@ -91,17 +91,17 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
             {isPlaying ? '⏸' : '▶'}
           </button>
           <button 
-            onClick={playNext}
-            className="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-lg text-xs cursor-pointer"
+            onClick={() => skipTime(10)}
+            className="bg-gray-800 hover:bg-gray-700 text-white p-1.5 rounded-lg text-[10px] cursor-pointer"
           >
-            ⏭
+            10s↻
           </button>
         </div>
       </div>
 
       {/* Expanded Player View with Progress Bar & Time */}
       {isExpanded && (
-        <div className="fixed inset-x-0 top-0 bottom-14 bg-[#0f0d13] z-40 flex flex-col justify-between py-6 px-6 overflow-y-auto">
+        <div className="fixed inset-x-0 top-0 bottom-[52px] bg-[#0e0c12] z-50 flex flex-col justify-between py-6 px-6 overflow-y-auto">
           {/* Top Header */}
           <div className="flex justify-between items-center">
             <button 
@@ -119,9 +119,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
 
           {/* Center Poster & Details */}
           <div className="flex flex-col items-center justify-center space-y-4 my-auto py-2">
-            <div className="w-44 h-44 sm:w-52 sm:h-52 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/80 bg-gray-900">
+            <div className="w-48 h-56 rounded-2xl overflow-hidden shadow-2xl border border-gray-800/80 bg-gray-900">
               <img 
-                src={currentPlayingEpisode.poster_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400'} 
+                src={currentPlayingEpisode.poster_url || currentPlayingEpisode.cover_url || 'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400'} 
                 alt="Story Poster" 
                 className="w-full h-full object-cover"
               />
@@ -188,4 +188,4 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({
     </>
   );
 };
-              
+            
