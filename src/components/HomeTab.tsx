@@ -18,6 +18,8 @@ interface HomeTabProps {
   loadingStories: boolean;
   onRefresh: () => void;
   onSelectStory: (title: string) => void;
+  currentPlayingEpisode?: any;
+  isPlaying?: boolean;
 }
 
 export const HomeTab: React.FC<HomeTabProps> = ({
@@ -37,6 +39,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   loadingStories,
   onRefresh,
   onSelectStory,
+  currentPlayingEpisode,
+  isPlaying,
 }) => {
   return (
     <div className="space-y-4">
@@ -66,6 +70,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           unlockedEpisodes={unlockedEpisodes}
           selectedStory={selectedStory}
           onBackToStories={onBackToStories}
+          currentPlayingEpisode={currentPlayingEpisode}
+          isPlaying={isPlaying}
         />
       ) : (
         <>
@@ -190,4 +196,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-          
+              
