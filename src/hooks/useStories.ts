@@ -12,7 +12,7 @@ export const useStories = () => {
       const { data, error } = await supabase
         .from('stories')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true }); // Ascending taaki purane episodes pehle aayein
 
       if (error) throw error;
 
@@ -49,11 +49,15 @@ export const useStories = () => {
 
     return Object.values(groupedStories).map((story: any) => ({
       ...story,
-      // Strictly sort episodes by episode_number so EP 1 comes first, then EP 2, etc.
-      episodes: story.episodes.sort(
-        (a: any, b: any) =>
-          Number(a.episode_number || 1) - Number(b.episode_number || 1)
-      ),
+      // Sort episodes: pehle episode_number se, agar wo same ho toh created_at se
+      episodes: story.episodes.sort((a: any, b: any) => {
+        const numA = Number(a.episode_number) || 0;
+        const numB = Number(b.episode_number) || 0;
+        if (numA !== numB) {
+          return numA - numB;
+        }
+        return new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime();
+      }),
       episodesCount: story.episodes.length,
     }));
   }, [stories]);
@@ -66,4 +70,3 @@ export const useStories = () => {
     series,
   };
 };
-    
