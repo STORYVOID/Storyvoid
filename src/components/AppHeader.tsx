@@ -1,4 +1,3 @@
-
 import React from 'react';
 
 interface AppHeaderProps {
@@ -11,24 +10,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onOpenCoinStore,
 }) => {
   return (
-    <header className="bg-[#100e15] border-b border-[#292431] px-4 py-4">
+    <header className="bg-[#100e15] border-b border-[#292431] px-3 py-2.5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-[25px] leading-none font-black tracking-wide text-[#ff741c]">
+          <h1 className="text-lg leading-none font-black tracking-wide text-[#ff741c]">
             STORYVOID
           </h1>
-          <p className="text-[11px] text-gray-400 mt-2 tracking-wider font-bold">
+          <p className="text-[9px] text-gray-400 mt-1 tracking-wider font-bold">
             SERIALIZED AUDIO
           </p>
         </div>
 
         <button
           onClick={onOpenCoinStore}
-          className="flex items-center gap-2 bg-[#202938] border border-[#343d4c] rounded-full px-4 py-3 text-white"
+          className="flex items-center gap-1.5 bg-[#202938] border border-[#343d4c] rounded-full px-3 py-1.5 text-white cursor-pointer"
         >
-          <span className="text-2xl">🟡</span>
-          <span className="font-bold text-sm">{coins} Coins</span>
-          <span className="bg-[#ff741c] rounded-full w-7 h-7 flex items-center justify-center font-bold">
+          <span className="text-sm">🟡</span>
+          <span className="font-bold text-xs">{coins} Coins</span>
+          <span className="bg-[#ff741c] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
             +
           </span>
         </button>
