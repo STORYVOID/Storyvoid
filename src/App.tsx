@@ -156,7 +156,8 @@ export default function App() {
     }
     const list = playlist.length > 0 ? playlist : [episode];
     setCurrentPlaylist(list);
-    setCurrentIndex(list.findIndex(i => i.id === episode.id) >= 0 ? list.findIndex(i => i.id === episode.id) : 0);
+    const foundIndex = list.findIndex(i => i.id === episode.id);
+    setCurrentIndex(foundIndex >= 0 ? foundIndex : 0);
     playAudio(episode);
   };
 
@@ -164,11 +165,13 @@ export default function App() {
   if (!authReady) return <div className="min-h-screen bg-[#0e0c12] flex items-center justify-center text-white">Loading STORYVOID...</div>;
   if (!isLoggedIn) return <AuthScreen onLogin={handleLogin} />;
 
+  const currentSelectedStory = series.find((s: any) => s.title === selectedStoryTitle);
+
   const homeProps = {
     genres,
     selectedGenreFilter,
     onGenreChange: (g: string) => { setSelectedGenreFilter(g); setSelectedStoryTitle(''); },
-    selectedStory: series.find((s: any) => s.title === selectedStoryTitle),
+    selectedStory: currentSelectedStory,
     onBackToStories: () => setSelectedStoryTitle(''),
     onEpisodeClick: (ep: any, list: any[]) => handleEpisodeAction(ep, list),
     unlockedEpisodes,
@@ -189,18 +192,26 @@ export default function App() {
       
       <audio 
         ref={audioRef} 
-        onEnded={() => { if (currentIndex < currentPlaylist.length - 1) handleEpisodeAction(currentPlaylist[currentIndex + 1], currentPlaylist); else setIsPlaying(false); }}
+        onEnded={() => { 
+          if (currentIndex < currentPlaylist.length - 1) {
+            const nextEp = currentPlaylist[currentIndex + 1];
+            setCurrentIndex(currentIndex + 1);
+            handleEpisodeAction(nextEp, currentPlaylist);
+          } else { 
+            setIsPlaying(false); 
+          } 
+        }}
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
       />
 
-      <main className="px-4 pt-4">
+      <main className="px-3 pt-3">
         <AppTabContent
           activeTab={activeTab}
           isAdmin={isAdmin}
           homeProps={homeProps}
           stories={stories}
-          onEpisodeClick={(ep: any) => handleEpisodeAction(ep)}
+          onEpisodeClick={(ep: any) => handleEpisodeAction(ep, [ep])}
           userEmail={userEmail}
           coins={coins}
           onLogout={handleLogout}
@@ -211,7 +222,7 @@ export default function App() {
       </main>
 
       {currentPlayingEpisode && (
-        <div className="fixed bottom-[68px] left-0 right-0 z-40">
+        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-[#100e15] border-t border-[#302b39]">
           <AudioPlayer
             episode={currentPlayingEpisode}
             isPlaying={isPlaying}
@@ -220,8 +231,20 @@ export default function App() {
               if (audioRef.current.paused) audioRef.current.play();
               else audioRef.current.pause();
             }}
-            onNext={() => { if (currentIndex < currentPlaylist.length - 1) handleEpisodeAction(currentPlaylist[currentIndex + 1], currentPlaylist); }}
-            onPrevious={() => { if (currentIndex > 0) handleEpisodeAction(currentPlaylist[currentIndex - 1], currentPlaylist); }}
+            onNext={() => { 
+              if (currentIndex < currentPlaylist.length - 1) {
+                const nextEp = currentPlaylist[currentIndex + 1];
+                setCurrentIndex(currentIndex + 1);
+                handleEpisodeAction(nextEp, currentPlaylist);
+              } 
+            }}
+            onPrevious={() => { 
+              if (currentIndex > 0) {
+                const prevEp = currentPlaylist[currentIndex - 1];
+                setCurrentIndex(currentIndex - 1);
+                handleEpisodeAction(prevEp, currentPlaylist);
+              } 
+            }}
           />
         </div>
       )}
@@ -232,5 +255,4 @@ export default function App() {
       {modalConfig.isOpen && <NotificationModal {...modalConfig} onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} />}
     </div>
   );
-        }
-          
+}
