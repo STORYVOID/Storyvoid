@@ -173,6 +173,33 @@ export default function App() {
     playAudio(episode);
   };
 
+  const togglePlayPause = () => {
+    if (!audioRef.current) return;
+    if (audioRef.current.paused) {
+      audioRef.current.play();
+      setIsPlaying(true);
+    } else {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
+
+  const playNext = () => {
+    if (currentIndex < currentPlaylist.length - 1) {
+      const nextEp = currentPlaylist[currentIndex + 1];
+      setCurrentIndex(currentIndex + 1);
+      handleEpisodeAction(nextEp, currentPlaylist);
+    }
+  };
+
+  const playPrev = () => {
+    if (currentIndex > 0) {
+      const prevEp = currentPlaylist[currentIndex - 1];
+      setCurrentIndex(currentIndex - 1);
+      handleEpisodeAction(prevEp, currentPlaylist);
+    }
+  };
+
   if (showSplash) return <SplashScreen />;
   if (!authReady) return <div className="min-h-screen bg-[#0e0c12] flex items-center justify-center text-white">Loading STORYVOID...</div>;
   if (!isLoggedIn) return <AuthScreen onLogin={handleLogin} />;
@@ -208,9 +235,7 @@ export default function App() {
         ref={audioRef} 
         onEnded={() => { 
           if (currentIndex < currentPlaylist.length - 1) {
-            const nextEp = currentPlaylist[currentIndex + 1];
-            setCurrentIndex(currentIndex + 1);
-            handleEpisodeAction(nextEp, currentPlaylist);
+            playNext();
           } else { 
             setIsPlaying(false); 
           } 
@@ -236,36 +261,14 @@ export default function App() {
       </main>
 
       {currentPlayingEpisode && (
-        <div className="fixed bottom-[52px] left-0 right-0 z-40 bg-[#100e15] border-t border-[#302b39]">
-          <AudioPlayer
-            episode={currentPlayingEpisode}
-            isPlaying={isPlaying}
-            onPlayPause={() => {
-              if (!audioRef.current) return;
-              if (audioRef.current.paused) {
-                audioRef.current.play();
-                setIsPlaying(true);
-              } else {
-                audioRef.current.pause();
-                setIsPlaying(false);
-              }
-            }}
-            onNext={() => { 
-              if (currentIndex < currentPlaylist.length - 1) {
-                const nextEp = currentPlaylist[currentIndex + 1];
-                setCurrentIndex(currentIndex + 1);
-                handleEpisodeAction(nextEp, currentPlaylist);
-              } 
-            }}
-            onPrevious={() => { 
-              if (currentIndex > 0) {
-                const prevEp = currentPlaylist[currentIndex - 1];
-                setCurrentIndex(currentIndex - 1);
-                handleEpisodeAction(prevEp, currentPlaylist);
-              } 
-            }}
-          />
-        </div>
+        <AudioPlayer
+          currentPlayingEpisode={currentPlayingEpisode}
+          isPlaying={isPlaying}
+          togglePlayPause={togglePlayPause}
+          playNext={playNext}
+          playPrev={playPrev}
+          audioRef={audioRef}
+        />
       )}
 
       <BottomNavigation activeTab={activeTab} isAdmin={isAdmin} onTabChange={(tab: any) => setActiveTab(tab)} />
@@ -274,5 +277,4 @@ export default function App() {
       {modalConfig.isOpen && <NotificationModal {...modalConfig} onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} />}
     </div>
   );
-      }
-        
+}
