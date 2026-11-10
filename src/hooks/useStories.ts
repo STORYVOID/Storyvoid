@@ -1,4 +1,3 @@
-
 import { useCallback, useMemo, useState } from 'react';
 import { supabase } from '../supabaseClient';
 
@@ -50,10 +49,10 @@ export const useStories = () => {
 
     return Object.values(groupedStories).map((story: any) => ({
       ...story,
+      // Strictly sort episodes by episode_number so EP 1 comes first, then EP 2, etc.
       episodes: story.episodes.sort(
         (a: any, b: any) =>
-          Number(a.episode_number || 1) -
-          Number(b.episode_number || 1)
+          Number(a.episode_number || 1) - Number(b.episode_number || 1)
       ),
       episodesCount: story.episodes.length,
     }));
@@ -67,3 +66,4 @@ export const useStories = () => {
     series,
   };
 };
+    
