@@ -6,6 +6,8 @@ interface EpisodeListProps {
   unlockedEpisodes: Record<string, boolean>;
   selectedStory?: any;
   onBackToStories?: () => void;
+  currentPlayingEpisode?: any;
+  isPlaying?: boolean;
 }
 
 export const EpisodeList: React.FC<EpisodeListProps> = ({
@@ -14,6 +16,8 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
   unlockedEpisodes,
   selectedStory,
   onBackToStories,
+  currentPlayingEpisode,
+  isPlaying,
 }) => {
   const [isFollowed, setIsFollowed] = useState<boolean>(false);
   const storyTitle = selectedStory?.title || 'Story';
@@ -47,7 +51,7 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
   };
 
   return (
-    <div className="space-y-3 w-full pb-16">
+    <div className="space-y-3 w-full pb-24">
       <div className="flex justify-between items-center mb-1">
         {onBackToStories && (
           <button 
@@ -96,11 +100,14 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
         {episodes.map((ep, idx) => {
           const price = Number(ep.coin_price || 0);
           const isUnlocked = price === 0 || unlockedEpisodes[ep.id];
+          const isCurrentPlaying = currentPlayingEpisode?.id === ep.id;
 
           return (
             <div 
               key={ep.id || idx} 
-              className="p-3 rounded-xl border border-gray-800 bg-[#16131c] flex justify-between items-center w-full shadow-md"
+              className={`p-3 rounded-xl border transition-all flex justify-between items-center w-full shadow-md ${
+                isCurrentPlaying ? 'border-[#ff741c] bg-[#1a151f]' : 'border-gray-800 bg-[#16131c]'
+              }`}
             >
               <div className="space-y-0.5 pr-2 flex-1 min-w-0">
                 <div className="flex items-center space-x-2">
@@ -114,6 +121,10 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
                 <p className="text-[10px] font-medium">
                   {price > 0 && !isUnlocked ? (
                     <span className="text-yellow-400">🔒 {price} Coins</span>
+                  ) : isCurrentPlaying ? (
+                    <span className="text-[#ff741c] font-bold">
+                      {isPlaying ? '▶ Playing...' : '⏸ Paused'}
+                    </span>
                   ) : (
                     <span className="text-emerald-400">✨ Ready</span>
                   )}
@@ -122,9 +133,15 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
 
               <button 
                 onClick={() => onEpisodeClick(ep, episodes)}
-                className="text-[11px] font-bold px-3.5 py-1.5 rounded-xl bg-[#ff741c] hover:bg-orange-600 text-white transition-all cursor-pointer shrink-0"
+                className="text-[11px] font-bold px-3.5 py-1.5 rounded-xl bg-[#ff741c] hover:bg-orange-600 text-white transition-all cursor-pointer shrink-0 flex items-center gap-1"
               >
-                {price > 0 && !isUnlocked ? `Unlock` : '▶ Play'}
+                {price > 0 && !isUnlocked ? (
+                  'Unlock'
+                ) : isCurrentPlaying && isPlaying ? (
+                  <>⏸ Pause</>
+                ) : (
+                  <>▶ Play</>
+                )}
               </button>
             </div>
           );
@@ -133,4 +150,3 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
     </div>
   );
 };
-        
