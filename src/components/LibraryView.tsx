@@ -17,7 +17,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
   const [followedTitles, setFollowedTitles] = useState<string[]>([]);
   const [historyEpisodes, setHistoryEpisodes] = useState<any[]>([]);
 
-  // User-specific keys so data never mixes between accounts
   const followKey = `storyvoid_followed_series_${userEmail.toLowerCase()}`;
   const historyKey = `storyvoid_history_${userEmail.toLowerCase()}`;
 
@@ -43,7 +42,6 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     <div className="space-y-4 pb-20">
       <h2 className="text-sm font-black text-white uppercase tracking-wider">My Library</h2>
 
-      {/* Sub-tabs */}
       <div className="flex gap-2 border-b border-gray-800 pb-2">
         <button
           onClick={() => setActiveSubTab('following')}
@@ -128,3 +126,4 @@ export const LibraryView: React.FC<LibraryViewProps> = ({
     </div>
   );
 };
+            
