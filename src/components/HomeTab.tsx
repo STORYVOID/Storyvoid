@@ -20,6 +20,7 @@ interface HomeTabProps {
   onSelectStory: (title: string) => void;
   currentPlayingEpisode?: any;
   isPlaying?: boolean;
+  userEmail?: string;
 }
 
 export const HomeTab: React.FC<HomeTabProps> = ({
@@ -41,6 +42,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   onSelectStory,
   currentPlayingEpisode,
   isPlaying,
+  userEmail = 'guest',
 }) => {
   return (
     <div className="space-y-4">
@@ -72,6 +74,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
           onBackToStories={onBackToStories}
           currentPlayingEpisode={currentPlayingEpisode}
           isPlaying={isPlaying}
+          userEmail={userEmail}
         />
       ) : (
         <>
@@ -196,4 +199,3 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-              
