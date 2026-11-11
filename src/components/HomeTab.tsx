@@ -50,13 +50,16 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const [isPromoEnabled, setIsPromoEnabled] = useState(true);
   const [isFeaturedEnabled, setIsFeaturedEnabled] = useState(true);
 
-  // Ad States
+  // Ad States (User specific keys)
   const [adsWatched, setAdsWatched] = useState(0);
   const [adMessage, setAdMessage] = useState('');
   const [showAdModal, setShowAdModal] = useState(false);
-  const [adTimer, setAdTimer] = useState(5); // 5 seconds ad simulation
+  const [adTimer, setAdTimer] = useState(5);
 
   const todayKey = new Date().toDateString();
+  // Har user ke liye unique storage key taaki ek ka data dusre me na ghuse
+  const userAdKey = `storyvoid_ads_${userEmail || 'guest'}`;
+  const userDateKey = `storyvoid_date_${userEmail || 'guest'}`;
 
   useEffect(() => {
     try {
@@ -66,35 +69,39 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       setIsPromoEnabled(localStorage.getItem('storyvoid_promo_enabled') !== 'false');
       setIsFeaturedEnabled(localStorage.getItem('storyvoid_featured_enabled') !== 'false');
 
-      const lastClaimDate = localStorage.getItem('storyvoid_ad_claim_date');
-      const watchedCount = parseInt(localStorage.getItem('storyvoid_ads_watched_count') || '0', 10);
+      const lastClaimDate = localStorage.getItem(userDateKey);
+      const watchedCount = parseInt(localStorage.getItem(userAdKey) || '0', 10);
 
       if (lastClaimDate !== todayKey) {
-        localStorage.setItem('storyvoid_ad_claim_date', todayKey);
-        localStorage.setItem('storyvoid_ads_watched_count', '0');
+        // Naya din ya naya user, is particular user ke liye reset
+        localStorage.setItem(userDateKey, todayKey);
+        localStorage.setItem(userAdKey, '0');
         setAdsWatched(0);
+        setAdMessage('');
       } else {
         setAdsWatched(watchedCount);
         if (watchedCount >= 5) {
           setAdMessage('✨ Daily limit reached! (5/5 ads watched). Come back tomorrow.');
+        } else if (watchedCount > 0) {
+          setAdMessage(`📺 You have watched ${watchedCount}/5 ads today.`);
         }
       }
     } catch (err) {
       console.error('Error loading config:', err);
     }
-  }, [todayKey]);
+  }, [todayKey, userEmail]);
 
   // Ad Popup Trigger
   const handleWatchAdClick = () => {
-    let currentWatched = parseInt(localStorage.getItem('storyvoid_ads_watched_count') || '0', 10);
+    let currentWatched = parseInt(localStorage.getItem(userAdKey) || '0', 10);
     
     if (currentWatched >= 5) {
-      alert('Aap aaj ki daily limit (5 ads) poori kar chuke hain! Kal dobara aayiye.');
+      alert('Aap aaj ki daily limit (5 ads) is account par poori kar chuke hain!');
       return;
     }
 
     setShowAdModal(true);
-    setAdTimer(5); // Reset timer to 5s
+    setAdTimer(5);
   };
 
   // Timer Effect for Ad Simulation
@@ -105,18 +112,19 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         setAdTimer((prev) => prev - 1);
       }, 1000);
     } else if (showAdModal && adTimer === 0) {
-      // Ad finished! Reward user
       setShowAdModal(false);
-      let currentWatched = parseInt(localStorage.getItem('storyvoid_ads_watched_count') || '0', 10) + 1;
-      localStorage.setItem('storyvoid_ads_watched_count', String(currentWatched));
+      
+      let currentWatched = parseInt(localStorage.getItem(userAdKey) || '0', 10) + 1;
+      localStorage.setItem(userAdKey, String(currentWatched));
+      localStorage.setItem(userDateKey, todayKey);
       setAdsWatched(currentWatched);
 
       const coinsReward = 6;
       if (onAddCoins) {
         onAddCoins(coinsReward);
       } else {
-        const currentCoins = parseInt(localStorage.getItem('storyvoid_user_coins') || '5', 10);
-        localStorage.setItem('storyvoid_user_coins', String(currentCoins + coinsReward));
+        const currentCoins = parseInt(localStorage.getItem(`storyvoid_coins_${userEmail}`) || '5', 10);
+        localStorage.setItem(`storyvoid_coins_${userEmail}`, String(currentCoins + coinsReward));
         window.dispatchEvent(new Event('storage'));
       }
 
@@ -127,7 +135,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       }
     }
     return () => clearInterval(interval);
-  }, [showAdModal, adTimer]);
+  }, [showAdModal, adTimer, userEmail, todayKey]);
 
   const isVideoFile = (url: string) => {
     if (!url) return false;
@@ -138,7 +146,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   return (
     <div className="space-y-4 pb-20 relative">
 
-      {/* REWARDED AD POPUP MODAL (TESTING MODE) */}
+      {/* REWARDED AD POPUP MODAL */}
       {showAdModal && (
         <div className="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-4 backdrop-blur-md">
           <div className="bg-[#1b1723] border border-orange-500/50 rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-scaleIn">
@@ -293,7 +301,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </div>
           )}
 
-          {/* EARN FREE COINS CARD */}
+          {/* EARN FREE COINS CARD (ACCOUNT SPECIFIC) */}
           <div className="rounded-2xl border border-[#302b39] bg-[#17141d] p-3 space-y-2 shadow-md">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -390,4 +398,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-      
+              
