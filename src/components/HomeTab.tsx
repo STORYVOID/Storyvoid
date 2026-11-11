@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { EpisodeList } from './EpisodeList';
 
 interface HomeTabProps {
@@ -44,8 +44,30 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   isPlaying,
   userEmail = 'guest',
 }) => {
+  // Promo banner state from localStorage
+  const [promoTitle, setPromoTitle] = useState('');
+  const [promoMediaUrl, setPromoMediaUrl] = useState('');
+  const [promoLink, setPromoLink] = useState('');
+
+  useEffect(() => {
+    try {
+      setPromoTitle(localStorage.getItem('storyvoid_promo_title') || '');
+      setPromoMediaUrl(localStorage.getItem('storyvoid_promo_media') || '');
+      setPromoLink(localStorage.getItem('storyvoid_promo_link') || '');
+    } catch (err) {
+      console.error('Error loading promo banner:', err);
+    }
+  }, []);
+
+  // Helper to check if URL is a video
+  const isVideoFile = (url: string) => {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    return lower.endsWith('.mp4') || lower.endsWith('.webm') || lower.endsWith('.ogg') || lower.includes('video');
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20">
 
       {/* GENRES */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -78,17 +100,69 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         />
       ) : (
         <>
+          {/* PROMOTIONAL / SOCIAL AD BANNER (IF SET IN ADMIN) */}
+          {promoMediaUrl && (
+            <div className="relative w-full overflow-hidden rounded-2xl border border-orange-500/40 shadow-lg" style={{ aspectRatio: '2.05 / 1' }}>
+              {isVideoFile(promoMediaUrl) ? (
+                <video
+                  src={promoMediaUrl}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <img
+                  src={promoMediaUrl}
+                  alt={promoTitle || 'Promo'}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-between items-end">
+                <div>
+                  <span className="inline-block rounded-md bg-purple-600 px-2 py-0.5 text-[9px] font-black tracking-wide text-white">
+                    📢 SPECIAL PROMO
+                  </span>
+                  <h3 className="text-xs font-black mt-1 text-white">{promoTitle || 'Special Announcement'}</h3>
+                </div>
+                {promoLink && (
+                  <a
+                    href={promoLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="rounded-xl bg-[#ff741c] px-3 py-1 text-[11px] font-bold text-white shadow hover:bg-orange-600 transition-all cursor-pointer"
+                  >
+                    Check Out →
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* FEATURED BANNER */}
           <div
             className="relative w-full overflow-hidden rounded-2xl border border-[#69422e]"
             style={{ aspectRatio: '2.05 / 1' }}
           >
             {bannerImage && (
-              <img
-                src={bannerImage}
-                alt={bannerTitle}
-                className="absolute inset-0 w-full h-full object-cover"
-              />
+              isVideoFile(bannerImage) ? (
+                <video
+                  src={bannerImage}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <img
+                  src={bannerImage}
+                  alt={bannerTitle}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              )
             )}
 
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" />
@@ -131,7 +205,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               className="shrink-0 rounded-xl bg-[#f4bd00] px-3.5 py-1.5 text-xs font-black text-black cursor-pointer hover:bg-yellow-400 transition-all"
             >
               Watch Ad
-            </button>
+            </Link> {/* Wait, button tag closed correctly */}
           </div>
 
           {/* STORY COLLECTION */}
@@ -199,3 +273,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
+      
