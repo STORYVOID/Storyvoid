@@ -13,7 +13,6 @@ interface HomeTabProps {
   bannerTitle: string;
   bannerDescription: string;
   onPlayFeatured: () => void;
-  onWatchAd: () => void;
   filteredStories: any[];
   loadingStories: boolean;
   onRefresh: () => void;
@@ -21,6 +20,7 @@ interface HomeTabProps {
   currentPlayingEpisode?: any;
   isPlaying?: boolean;
   userEmail?: string;
+  onAddCoins?: (amount: number) => void;
 }
 
 export const HomeTab: React.FC<HomeTabProps> = ({
@@ -35,7 +35,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   bannerTitle,
   bannerDescription,
   onPlayFeatured,
-  onWatchAd,
   filteredStories,
   loadingStories,
   onRefresh,
@@ -43,12 +42,19 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   currentPlayingEpisode,
   isPlaying,
   userEmail = 'guest',
+  onAddCoins,
 }) => {
   const [promoTitle, setPromoTitle] = useState('');
   const [promoMediaUrl, setPromoMediaUrl] = useState('');
   const [promoLink, setPromoLink] = useState('');
   const [isPromoEnabled, setIsPromoEnabled] = useState(true);
   const [isFeaturedEnabled, setIsFeaturedEnabled] = useState(true);
+
+  // Ad Watch Counter & Limit States (Max 5 ads per day)
+  const [adsWatched, setAdsWatched] = useState(0);
+  const [adMessage, setAdMessage] = useState('');
+
+  const todayKey = new Date().toDateString();
 
   useEffect(() => {
     try {
@@ -57,10 +63,54 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       setPromoLink(localStorage.getItem('storyvoid_promo_link') || '');
       setIsPromoEnabled(localStorage.getItem('storyvoid_promo_enabled') !== 'false');
       setIsFeaturedEnabled(localStorage.getItem('storyvoid_featured_enabled') !== 'false');
+
+      const lastClaimDate = localStorage.getItem('storyvoid_ad_claim_date');
+      const watchedCount = parseInt(localStorage.getItem('storyvoid_ads_watched_count') || '0', 10);
+
+      if (lastClaimDate !== todayKey) {
+        // Naya din shuru, reset counter
+        localStorage.setItem('storyvoid_ad_claim_date', todayKey);
+        localStorage.setItem('storyvoid_ads_watched_count', '0');
+        setAdsWatched(0);
+      } else {
+        setAdsWatched(watchedCount);
+        if (watchedCount >= 5) {
+          setAdMessage('✨ Daily limit reached! (5/5 ads watched). Come back tomorrow.');
+        }
+      }
     } catch (err) {
-      console.error('Error loading banners config:', err);
+      console.error('Error loading config:', err);
     }
-  }, []);
+  }, [todayKey]);
+
+  const handleWatchAdClick = () => {
+    let currentWatched = parseInt(localStorage.getItem('storyvoid_ads_watched_count') || '0', 10);
+    
+    if (currentWatched >= 5) {
+      alert('Aap aaj ki daily limit (5 ads) poori kar chuke hain! Kal dobara aayiye.');
+      return;
+    }
+
+    currentWatched += 1;
+    localStorage.setItem('storyvoid_ads_watched_count', String(currentWatched));
+    setAdsWatched(currentWatched);
+
+    // Har ad dekhne par turant +6 coins milenge (Total 5 ads x 6 = 30 coins)
+    const coinsReward = 6;
+    if (onAddCoins) {
+      onAddCoins(coinsReward);
+    } else {
+      const currentCoins = parseInt(localStorage.getItem('storyvoid_user_coins') || '5', 10);
+      localStorage.setItem('storyvoid_user_coins', String(currentCoins + coinsReward));
+      window.dispatchEvent(new Event('storage'));
+    }
+
+    if (currentWatched < 5) {
+      setAdMessage(`🎉 Ad watched! (+6 coins added). ${5 - currentWatched} ads left for today.`);
+    } else {
+      setAdMessage('🔥 Daily quota completed! You watched all 5 ads and earned 30 coins today.');
+    }
+  };
 
   const isVideoFile = (url: string) => {
     if (!url) return false;
@@ -88,7 +138,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         ))}
       </div>
 
-      {/* SELECTED STORY VIEW (EPISODES & POSTER) */}
+      {/* SELECTED STORY VIEW */}
       {selectedStory ? (
         <EpisodeList
           episodes={selectedStory.episodes}
@@ -102,7 +152,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         />
       ) : (
         <>
-          {/* PROMOTIONAL BANNER (ONLY IF ENABLED & URL EXISTS) */}
+          {/* PROMOTIONAL BANNER */}
           {isPromoEnabled && promoMediaUrl && (
             <div className="relative w-full overflow-hidden rounded-2xl border border-orange-500/40 shadow-lg" style={{ aspectRatio: '2.05 / 1' }}>
               {isVideoFile(promoMediaUrl) ? (
@@ -143,7 +193,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </div>
           )}
 
-          {/* FEATURED BANNER (ONLY IF ENABLED) */}
+          {/* FEATURED BANNER */}
           {isFeaturedEnabled && (
             <div
               className="relative w-full overflow-hidden rounded-2xl border border-[#69422e]"
@@ -193,23 +243,36 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </div>
           )}
 
-          {/* FREE COINS */}
-          <div className="rounded-2xl border border-[#302b39] bg-[#17141d] p-3 flex items-center justify-between gap-2 shadow-md">
-            <div>
-              <h3 className="font-bold text-[#ffd329] text-xs flex items-center gap-1">
-                🟡 EARN FREE COINS
-              </h3>
-              <p className="text-[10px] text-gray-300 mt-0.5">
-                Watch a short ad to get +20 coins.
-              </p>
+          {/* EARN FREE COINS (INSTANT COIN PER AD WITH 5 ADS DAILY LIMIT) */}
+          <div className="rounded-2xl border border-[#302b39] bg-[#17141d] p-3 space-y-2 shadow-md">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h3 className="font-bold text-[#ffd329] text-xs flex items-center gap-1">
+                  🟡 EARN FREE COINS ({adsWatched}/5 Ads Watched)
+                </h3>
+                <p className="text-[10px] text-gray-300 mt-0.5">
+                  Watch an ad to get instant +6 coins! (Max 30/day)
+                </p>
+              </div>
+
+              <button
+                onClick={handleWatchAdClick}
+                disabled={adsWatched >= 5}
+                className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-black transition-all ${
+                  adsWatched >= 5
+                    ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                    : 'bg-[#f4bd00] text-black cursor-pointer hover:bg-yellow-400'
+                }`}
+              >
+                {adsWatched >= 5 ? 'Limit Reached' : 'Watch Ad'}
+              </button>
             </div>
 
-            <button
-              onClick={onWatchAd}
-              className="shrink-0 rounded-xl bg-[#f4bd00] px-3.5 py-1.5 text-xs font-black text-black cursor-pointer hover:bg-yellow-400 transition-all"
-            >
-              Watch Ad
-            </button>
+            {adMessage && (
+              <p className="text-[10px] text-orange-400 font-semibold bg-[#121017] p-1.5 rounded-lg text-center">
+                {adMessage}
+              </p>
+            )}
           </div>
 
           {/* STORY COLLECTION */}
@@ -277,3 +340,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
+                    
