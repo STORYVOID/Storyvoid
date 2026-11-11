@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { AddEpisodeTab } from './admin/AddEpisodeTab';
-import { NewStoryTab } from './admin/NewStoryTab';
+import { AddEpisodeTab } from './components/admin/AddEpisodeTab';
+import { NewStoryTab } from './components/admin/NewStoryTab';
 import { AdminUsersTab } from './AdminUsersTab';
 import { AdminManageTab } from './AdminManageTab';
 
@@ -34,7 +34,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     localStorage.getItem('storyvoid_custom_banner_image') || ''
   );
 
-  // Featured banner toggle state (default true if not set)
   const [isFeaturedEnabled, setIsFeaturedEnabled] = useState(
     localStorage.getItem('storyvoid_featured_enabled') !== 'false'
   );
@@ -51,7 +50,6 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     localStorage.getItem('storyvoid_promo_link') || ''
   );
 
-  // Promo banner toggle state
   const [isPromoEnabled, setIsPromoEnabled] = useState(
     localStorage.getItem('storyvoid_promo_enabled') !== 'false'
   );
@@ -340,4 +338,4 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     </div>
   );
 };
-                                 
+            
