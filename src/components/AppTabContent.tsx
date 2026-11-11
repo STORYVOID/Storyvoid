@@ -3,7 +3,7 @@ import { HomeTab } from './HomeTab';
 import { SearchView } from './SearchView';
 import { LibraryView } from './LibraryView';
 import { ProfileView } from './ProfileView';
-import { AdminPanel } from './AdminPanel';
+import { AdminPanel } from '../AdminPanel'; // Agar AdminPanel src/ folder me hai
 
 interface AppTabContentProps {
   activeTab: 'home' | 'search' | 'library' | 'profile' | 'admin';
