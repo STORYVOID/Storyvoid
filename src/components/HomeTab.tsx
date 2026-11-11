@@ -57,9 +57,9 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const [adTimer, setAdTimer] = useState(5);
 
   const todayKey = new Date().toDateString();
-  // Har user ke liye unique storage key taaki ek ka data dusre me na ghuse
   const userAdKey = `storyvoid_ads_${userEmail || 'guest'}`;
   const userDateKey = `storyvoid_date_${userEmail || 'guest'}`;
+  const coinKey = `storyvoid_coins_${userEmail || 'guest'}`;
 
   useEffect(() => {
     try {
@@ -73,7 +73,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       const watchedCount = parseInt(localStorage.getItem(userAdKey) || '0', 10);
 
       if (lastClaimDate !== todayKey) {
-        // Naya din ya naya user, is particular user ke liye reset
         localStorage.setItem(userDateKey, todayKey);
         localStorage.setItem(userAdKey, '0');
         setAdsWatched(0);
@@ -89,7 +88,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     } catch (err) {
       console.error('Error loading config:', err);
     }
-  }, [todayKey, userEmail]);
+  }, [todayKey, userEmail, userAdKey, userDateKey]);
 
   // Ad Popup Trigger
   const handleWatchAdClick = () => {
@@ -119,14 +118,19 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       localStorage.setItem(userDateKey, todayKey);
       setAdsWatched(currentWatched);
 
+      // Instant Coin Update Logic
       const coinsReward = 6;
+      const currentCoins = parseInt(localStorage.getItem(coinKey) || '5', 10);
+      const newTotalCoins = currentCoins + coinsReward;
+      
+      localStorage.setItem(coinKey, String(newTotalCoins));
+
       if (onAddCoins) {
         onAddCoins(coinsReward);
-      } else {
-        const currentCoins = parseInt(localStorage.getItem(`storyvoid_coins_${userEmail}`) || '5', 10);
-        localStorage.setItem(`storyvoid_coins_${userEmail}`, String(currentCoins + coinsReward));
-        window.dispatchEvent(new Event('storage'));
       }
+
+      window.dispatchEvent(new Event('storage'));
+      window.dispatchEvent(new CustomEvent('coinsUpdated', { detail: newTotalCoins }));
 
       if (currentWatched < 5) {
         setAdMessage(`🎉 Ad watched successfully! (+6 coins added). ${5 - currentWatched} ads left today.`);
@@ -135,7 +139,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       }
     }
     return () => clearInterval(interval);
-  }, [showAdModal, adTimer, userEmail, todayKey]);
+  }, [showAdModal, adTimer, userEmail, todayKey, userAdKey, userDateKey, coinKey, onAddCoins]);
 
   const isVideoFile = (url: string) => {
     if (!url) return false;
@@ -398,4 +402,3 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-              
