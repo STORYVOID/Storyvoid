@@ -55,17 +55,20 @@ export const AppTabContent: React.FC<AppTabContentProps> = ({
       return (
         <ProfileView 
           userEmail={userEmail} 
+          isAdmin={isAdmin}
           coins={coins} 
           onLogout={onLogout} 
-          onOpenCoinStore={onOpenCoinStore} 
+          onOpenCoinStore={onOpenCoinStore}
+          onWatchAd={() => showSuccessMessage('Ad watched successfully! +20 coins added.')}
         />
       );
     
     case 'admin':
       return isAdmin ? (
         <AdminPanel 
+          stories={stories}
           fetchStories={fetchStories} 
-          showSuccessMessage={showSuccessMessage} 
+          setSuccessMessage={showSuccessMessage} 
         />
       ) : (
         <div className="text-center py-12 text-gray-400 text-xs">Access Denied</div>
