@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
-import { AddEpisodeTab } from './components/admin/AddEpisodeTab';
-import { NewStoryTab } from './components/admin/NewStoryTab';
-import { AdminUsersTab } from './components/AdminUsersTab';
-import { AdminManageTab } from './components/AdminManageTab';
+import { AddEpisodeTab } from './admin/AddEpisodeTab';
+import { NewStoryTab } from './admin/NewStoryTab';
+import { AdminUsersTab } from './AdminUsersTab';
+import { AdminManageTab } from './AdminManageTab';
 
 interface AdminPanelProps {
   stories: any[];
@@ -35,6 +34,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     localStorage.getItem('storyvoid_custom_banner_image') || ''
   );
 
+  // Featured banner toggle state (default true if not set)
+  const [isFeaturedEnabled, setIsFeaturedEnabled] = useState(
+    localStorage.getItem('storyvoid_featured_enabled') !== 'false'
+  );
+
   const [promoTitle, setPromoTitle] = useState(
     localStorage.getItem('storyvoid_promo_title') || ''
   );
@@ -45,6 +49,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   const [promoLink, setPromoLink] = useState(
     localStorage.getItem('storyvoid_promo_link') || ''
+  );
+
+  // Promo banner toggle state
+  const [isPromoEnabled, setIsPromoEnabled] = useState(
+    localStorage.getItem('storyvoid_promo_enabled') !== 'false'
   );
 
   const uniqueSeriesNames = Array.from(
@@ -62,6 +71,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     localStorage.setItem(
       'storyvoid_custom_banner_image',
       customBannerImg
+    );
+
+    localStorage.setItem(
+      'storyvoid_featured_enabled',
+      String(isFeaturedEnabled)
     );
 
     setSuccessMessage('Featured banner updated successfully!');
@@ -83,6 +97,11 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     localStorage.setItem(
       'storyvoid_promo_link',
       promoLink
+    );
+
+    localStorage.setItem(
+      'storyvoid_promo_enabled',
+      String(isPromoEnabled)
     );
 
     setSuccessMessage('Promotional banner updated successfully!');
@@ -173,9 +192,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           onSubmit={handleSaveBanner}
           className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 space-y-3 shadow-lg"
         >
-          <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wide">
-            ⭐ Set Home Featured / Trending Banner
-          </h3>
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wide">
+              ⭐ Set Home Featured / Trending Banner
+            </h3>
+            <label className="flex items-center cursor-pointer gap-2">
+              <span className="text-[10px] text-gray-300 font-bold">
+                {isFeaturedEnabled ? '🟢 ON' : '🔴 OFF'}
+              </span>
+              <input 
+                type="checkbox"
+                checked={isFeaturedEnabled}
+                onChange={(e) => setIsFeaturedEnabled(e.target.checked)}
+                className="w-4 h-4 accent-orange-500 cursor-pointer"
+              />
+            </label>
+          </div>
 
           <div>
             <label className="text-[10px] text-gray-400">
@@ -225,9 +257,22 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
           onSubmit={handleSavePromoBanner}
           className="bg-[#16131c] p-4 rounded-2xl border border-gray-800 space-y-3 shadow-lg"
         >
-          <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wide">
-            📢 Promotional / Social Ad Banner
-          </h3>
+          <div className="flex justify-between items-center">
+            <h3 className="text-xs font-bold text-orange-400 uppercase tracking-wide">
+              📢 Promotional / Social Ad Banner
+            </h3>
+            <label className="flex items-center cursor-pointer gap-2">
+              <span className="text-[10px] text-gray-300 font-bold">
+                {isPromoEnabled ? '🟢 ON' : '🔴 OFF'}
+              </span>
+              <input 
+                type="checkbox"
+                checked={isPromoEnabled}
+                onChange={(e) => setIsPromoEnabled(e.target.checked)}
+                className="w-4 h-4 accent-orange-500 cursor-pointer"
+              />
+            </label>
+          </div>
 
           <div>
             <label className="text-[10px] text-gray-400">
@@ -295,4 +340,4 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     </div>
   );
 };
-        
+                                 
