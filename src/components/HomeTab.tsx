@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { EpisodeList } from './EpisodeList';
 
 interface HomeTabProps {
@@ -20,7 +21,7 @@ interface HomeTabProps {
   currentPlayingEpisode?: any;
   isPlaying?: boolean;
   userEmail?: string;
-  onAddCoins?: (amount: number) => void;
+  onAddCoins?: (amount: number) => Promise<boolean>;
 }
 
 export const HomeTab: React.FC<HomeTabProps> = ({
@@ -50,39 +51,60 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const [isPromoEnabled, setIsPromoEnabled] = useState(true);
   const [isFeaturedEnabled, setIsFeaturedEnabled] = useState(true);
 
-  // Ad States (User specific keys)
+  // AD STATES
   const [adsWatched, setAdsWatched] = useState(0);
   const [adMessage, setAdMessage] = useState('');
   const [showAdModal, setShowAdModal] = useState(false);
   const [adTimer, setAdTimer] = useState(5);
+  const [isClaimingReward, setIsClaimingReward] = useState(false);
+
+  // Prevent duplicate reward calls
+  const claimLockRef = useRef(false);
 
   const todayKey = new Date().toDateString();
+
   const userAdKey = `storyvoid_ads_${userEmail || 'guest'}`;
   const userDateKey = `storyvoid_date_${userEmail || 'guest'}`;
-  const coinKey = `storyvoid_coins_${userEmail || 'guest'}`;
 
+  // LOAD PROMO AND DAILY AD DATA
   useEffect(() => {
     try {
       setPromoTitle(localStorage.getItem('storyvoid_promo_title') || '');
       setPromoMediaUrl(localStorage.getItem('storyvoid_promo_media') || '');
       setPromoLink(localStorage.getItem('storyvoid_promo_link') || '');
-      setIsPromoEnabled(localStorage.getItem('storyvoid_promo_enabled') !== 'false');
-      setIsFeaturedEnabled(localStorage.getItem('storyvoid_featured_enabled') !== 'false');
+
+      setIsPromoEnabled(
+        localStorage.getItem('storyvoid_promo_enabled') !== 'false'
+      );
+
+      setIsFeaturedEnabled(
+        localStorage.getItem('storyvoid_featured_enabled') !== 'false'
+      );
 
       const lastClaimDate = localStorage.getItem(userDateKey);
-      const watchedCount = parseInt(localStorage.getItem(userAdKey) || '0', 10);
+
+      const watchedCount = parseInt(
+        localStorage.getItem(userAdKey) || '0',
+        10
+      );
 
       if (lastClaimDate !== todayKey) {
         localStorage.setItem(userDateKey, todayKey);
         localStorage.setItem(userAdKey, '0');
+
         setAdsWatched(0);
         setAdMessage('');
       } else {
         setAdsWatched(watchedCount);
+
         if (watchedCount >= 5) {
-          setAdMessage('✨ Daily limit reached! (5/5 ads watched). Come back tomorrow.');
+          setAdMessage(
+            '✨ Daily limit reached! (5/5 ads watched). Come back tomorrow.'
+          );
         } else if (watchedCount > 0) {
-          setAdMessage(`📺 You have watched ${watchedCount}/5 ads today.`);
+          setAdMessage(
+            `📺 You have watched ${watchedCount}/5 ads today.`
+          );
         }
       }
     } catch (err) {
@@ -90,61 +112,131 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     }
   }, [todayKey, userEmail, userAdKey, userDateKey]);
 
-  // Ad Popup Trigger
+  // WATCH AD BUTTON
   const handleWatchAdClick = () => {
-    let currentWatched = parseInt(localStorage.getItem(userAdKey) || '0', 10);
-    
-    if (currentWatched >= 5) {
-      alert('Aap aaj ki daily limit (5 ads) is account par poori kar chuke hain!');
+    if (isClaimingReward || claimLockRef.current) return;
+
+    const currentWatched = parseInt(
+      localStorage.getItem(userAdKey) || '0',
+      10
+    );
+
+    const lastClaimDate = localStorage.getItem(userDateKey);
+
+    if (lastClaimDate !== todayKey) {
+      localStorage.setItem(userDateKey, todayKey);
+      localStorage.setItem(userAdKey, '0');
+      setAdsWatched(0);
+    }
+
+    if (currentWatched >= 5 && lastClaimDate === todayKey) {
+      alert('Aap aaj ki daily limit (5 ads) poori kar chuke hain!');
       return;
     }
 
-    setShowAdModal(true);
+    setAdMessage('');
     setAdTimer(5);
+    setShowAdModal(true);
   };
 
-  // Timer Effect for Ad Simulation
+  // AD TIMER AND SUPABASE REWARD
   useEffect(() => {
-    let interval: any;
+    let interval: ReturnType<typeof setInterval> | undefined;
+
     if (showAdModal && adTimer > 0) {
       interval = setInterval(() => {
-        setAdTimer((prev) => prev - 1);
+        setAdTimer((prev) => Math.max(0, prev - 1));
       }, 1000);
-    } else if (showAdModal && adTimer === 0) {
-      setShowAdModal(false);
-      
-      let currentWatched = parseInt(localStorage.getItem(userAdKey) || '0', 10) + 1;
-      localStorage.setItem(userAdKey, String(currentWatched));
-      localStorage.setItem(userDateKey, todayKey);
-      setAdsWatched(currentWatched);
-
-      // Instant Coin Update Logic
-      const coinsReward = 6;
-      const currentCoins = parseInt(localStorage.getItem(coinKey) || '5', 10);
-      const newTotalCoins = currentCoins + coinsReward;
-      
-      localStorage.setItem(coinKey, String(newTotalCoins));
-
-      if (onAddCoins) {
-        onAddCoins(coinsReward);
-      }
-
-      window.dispatchEvent(new Event('storage'));
-      window.dispatchEvent(new CustomEvent('coinsUpdated', { detail: newTotalCoins }));
-
-      if (currentWatched < 5) {
-        setAdMessage(`🎉 Ad watched successfully! (+6 coins added). ${5 - currentWatched} ads left today.`);
-      } else {
-        setAdMessage('🔥 Daily quota completed! You watched all 5 ads and earned 30 coins today.');
-      }
     }
-    return () => clearInterval(interval);
-  }, [showAdModal, adTimer, userEmail, todayKey, userAdKey, userDateKey, coinKey, onAddCoins]);
+
+    if (showAdModal && adTimer === 0 && !claimLockRef.current) {
+      claimLockRef.current = true;
+
+      setShowAdModal(false);
+      setIsClaimingReward(true);
+
+      const claimReward = async () => {
+        try {
+          if (!onAddCoins) {
+            throw new Error('Reward system is not connected.');
+          }
+
+          // Actual Supabase wallet reward
+          const success = await onAddCoins(6);
+
+          if (!success) {
+            setAdMessage(
+              '❌ Coins could not be added. Please try again.'
+            );
+            return;
+          }
+
+          // Count ad only after successful wallet update
+          const lastClaimDate = localStorage.getItem(userDateKey);
+
+          let currentWatched = 0;
+
+          if (lastClaimDate === todayKey) {
+            currentWatched = parseInt(
+              localStorage.getItem(userAdKey) || '0',
+              10
+            );
+          }
+
+          currentWatched += 1;
+
+          localStorage.setItem(userAdKey, String(currentWatched));
+          localStorage.setItem(userDateKey, todayKey);
+
+          setAdsWatched(currentWatched);
+
+          if (currentWatched < 5) {
+            setAdMessage(
+              `🎉 Ad watched successfully! (+6 coins added). ${5 - currentWatched} ads left today.`
+            );
+          } else {
+            setAdMessage(
+              '🔥 Daily quota completed! You earned 30 coins today.'
+            );
+          }
+        } catch (error: any) {
+          console.error('Reward claim failed:', error);
+
+          setAdMessage(
+            '❌ Reward failed. Please try again.'
+          );
+        } finally {
+          setIsClaimingReward(false);
+          claimLockRef.current = false;
+        }
+      };
+
+      void claimReward();
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [
+    showAdModal,
+    adTimer,
+    userAdKey,
+    userDateKey,
+    todayKey,
+    onAddCoins,
+  ]);
 
   const isVideoFile = (url: string) => {
     if (!url) return false;
+
     const lower = url.toLowerCase();
-    return lower.endsWith('.mp4') || lower.endsWith('.webm') || lower.endsWith('.ogg') || lower.includes('video');
+
+    return (
+      lower.endsWith('.mp4') ||
+      lower.endsWith('.webm') ||
+      lower.endsWith('.ogg') ||
+      lower.includes('video')
+    );
   };
 
   return (
@@ -154,24 +246,37 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       {showAdModal && (
         <div className="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-4 backdrop-blur-md">
           <div className="bg-[#1b1723] border border-orange-500/50 rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-scaleIn">
+
             <span className="bg-orange-500/20 text-orange-400 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
               📺 Sponsored Ad Playing...
             </span>
 
             <div className="w-full h-36 bg-black rounded-xl border border-gray-800 flex flex-col items-center justify-center relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-tr from-orange-600/20 to-purple-600/20 animate-pulse" />
-              <p className="text-white font-bold text-sm z-10">StoryVoid Partner Ad</p>
-              <p className="text-gray-400 text-[10px] z-10 mt-1">Watch till the end to claim +6 coins!</p>
+
+              <p className="text-white font-bold text-sm z-10">
+                StoryVoid Partner Ad
+              </p>
+
+              <p className="text-gray-400 text-[10px] z-10 mt-1">
+                Watch till the end to claim +6 coins!
+              </p>
             </div>
 
             <div className="space-y-1">
               <p className="text-xs text-gray-300">
-                Ad ending in <span className="text-orange-400 font-bold text-sm">{adTimer}s</span>
+                Ad ending in{' '}
+                <span className="text-orange-400 font-bold text-sm">
+                  {adTimer}s
+                </span>
               </p>
+
               <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                <div 
+                <div
                   className="bg-orange-500 h-full transition-all duration-1000"
-                  style={{ width: `${(adTimer / 5) * 100}%` }}
+                  style={{
+                    width: `${(adTimer / 5) * 100}%`
+                  }}
                 />
               </div>
             </div>
@@ -179,6 +284,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             <p className="text-[10px] text-gray-500 italic">
               Please do not close this window while the ad is playing.
             </p>
+
           </div>
         </div>
       )}
@@ -204,7 +310,9 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       {selectedStory ? (
         <EpisodeList
           episodes={selectedStory.episodes}
-          onEpisodeClick={(ep: any, playlist: any[]) => onEpisodeClick(ep, playlist)}
+          onEpisodeClick={(ep: any, playlist: any[]) =>
+            onEpisodeClick(ep, playlist)
+          }
           unlockedEpisodes={unlockedEpisodes}
           selectedStory={selectedStory}
           onBackToStories={onBackToStories}
@@ -216,7 +324,10 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         <>
           {/* PROMOTIONAL BANNER */}
           {isPromoEnabled && promoMediaUrl && (
-            <div className="relative w-full overflow-hidden rounded-2xl border border-orange-500/40 shadow-lg" style={{ aspectRatio: '2.05 / 1' }}>
+            <div
+              className="relative w-full overflow-hidden rounded-2xl border border-orange-500/40 shadow-lg"
+              style={{ aspectRatio: '2.05 / 1' }}
+            >
               {isVideoFile(promoMediaUrl) ? (
                 <video
                   src={promoMediaUrl}
@@ -233,14 +344,20 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   className="absolute inset-0 w-full h-full object-cover"
                 />
               )}
+
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+
               <div className="absolute bottom-0 left-0 right-0 p-3 flex justify-between items-end">
                 <div>
                   <span className="inline-block rounded-md bg-purple-600 px-2 py-0.5 text-[9px] font-black tracking-wide text-white">
                     📢 SPECIAL PROMO
                   </span>
-                  <h3 className="text-xs font-black mt-1 text-white">{promoTitle || 'Special Announcement'}</h3>
+
+                  <h3 className="text-xs font-black mt-1 text-white">
+                    {promoTitle || 'Special Announcement'}
+                  </h3>
                 </div>
+
                 {promoLink && (
                   <a
                     href={promoLink}
@@ -305,13 +422,14 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </div>
           )}
 
-          {/* EARN FREE COINS CARD (ACCOUNT SPECIFIC) */}
+          {/* EARN FREE COINS CARD */}
           <div className="rounded-2xl border border-[#302b39] bg-[#17141d] p-3 space-y-2 shadow-md">
             <div className="flex items-center justify-between gap-2">
               <div>
                 <h3 className="font-bold text-[#ffd329] text-xs flex items-center gap-1">
                   🟡 EARN FREE COINS ({adsWatched}/5 Ads Watched)
                 </h3>
+
                 <p className="text-[10px] text-gray-300 mt-0.5">
                   Watch a 5s ad to get instant +6 coins! (Max 30/day)
                 </p>
@@ -319,14 +437,18 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
               <button
                 onClick={handleWatchAdClick}
-                disabled={adsWatched >= 5}
+                disabled={adsWatched >= 5 || isClaimingReward}
                 className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-black transition-all ${
-                  adsWatched >= 5
+                  adsWatched >= 5 || isClaimingReward
                     ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
                     : 'bg-[#f4bd00] text-black cursor-pointer hover:bg-yellow-400'
                 }`}
               >
-                {adsWatched >= 5 ? 'Limit Reached' : 'Watch Ad'}
+                {isClaimingReward
+                  ? 'Please Wait...'
+                  : adsWatched >= 5
+                    ? 'Limit Reached'
+                    : 'Watch Ad'}
               </button>
             </div>
 
@@ -402,3 +524,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
+          
