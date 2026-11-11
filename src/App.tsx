@@ -146,6 +146,18 @@ export default function App() {
       audioRef.current.src = episode.audio_url;
       audioRef.current.play().catch(() => setIsPlaying(false));
     }
+
+    try {
+      const historyKey = `storyvoid_history_${(userEmail || 'guest').toLowerCase()}`;
+      const saved = localStorage.getItem(historyKey);
+      let history = saved ? JSON.parse(saved) : [];
+      history = history.filter((item: any) => item.id !== episode.id);
+      history.unshift(episode);
+      if (history.length > 25) history.pop();
+      localStorage.setItem(historyKey, JSON.stringify(history));
+    } catch (err) {
+      console.error('History save error:', err);
+    }
   };
 
   const handleEpisodeAction = async (episode: any, playlist: any[] = []) => {
@@ -225,6 +237,7 @@ export default function App() {
     onSelectStory: (title: string) => setSelectedStoryTitle(title),
     currentPlayingEpisode,
     isPlaying,
+    userEmail,
   };
 
   return (
@@ -250,6 +263,7 @@ export default function App() {
           isAdmin={isAdmin}
           homeProps={homeProps}
           stories={stories}
+          series={series}
           onEpisodeClick={(ep: any) => handleEpisodeAction(ep, [ep])}
           userEmail={userEmail}
           coins={coins}
@@ -277,4 +291,4 @@ export default function App() {
       {modalConfig.isOpen && <NotificationModal {...modalConfig} onClose={() => setModalConfig(prev => ({ ...prev, isOpen: false }))} />}
     </div>
   );
-}
+    }
