@@ -47,14 +47,18 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const [promoTitle, setPromoTitle] = useState('');
   const [promoMediaUrl, setPromoMediaUrl] = useState('');
   const [promoLink, setPromoLink] = useState('');
+  const [isPromoEnabled, setIsPromoEnabled] = useState(true);
+  const [isFeaturedEnabled, setIsFeaturedEnabled] = useState(true);
 
   useEffect(() => {
     try {
       setPromoTitle(localStorage.getItem('storyvoid_promo_title') || '');
       setPromoMediaUrl(localStorage.getItem('storyvoid_promo_media') || '');
       setPromoLink(localStorage.getItem('storyvoid_promo_link') || '');
+      setIsPromoEnabled(localStorage.getItem('storyvoid_promo_enabled') !== 'false');
+      setIsFeaturedEnabled(localStorage.getItem('storyvoid_featured_enabled') !== 'false');
     } catch (err) {
-      console.error('Error loading promo banner:', err);
+      console.error('Error loading banners config:', err);
     }
   }, []);
 
@@ -98,8 +102,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         />
       ) : (
         <>
-          {/* PROMOTIONAL / SOCIAL AD BANNER (IF SET IN ADMIN) */}
-          {promoMediaUrl && (
+          {/* PROMOTIONAL BANNER (ONLY IF ENABLED & URL EXISTS) */}
+          {isPromoEnabled && promoMediaUrl && (
             <div className="relative w-full overflow-hidden rounded-2xl border border-orange-500/40 shadow-lg" style={{ aspectRatio: '2.05 / 1' }}>
               {isVideoFile(promoMediaUrl) ? (
                 <video
@@ -139,53 +143,55 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </div>
           )}
 
-          {/* FEATURED BANNER */}
-          <div
-            className="relative w-full overflow-hidden rounded-2xl border border-[#69422e]"
-            style={{ aspectRatio: '2.05 / 1' }}
-          >
-            {bannerImage && (
-              isVideoFile(bannerImage) ? (
-                <video
-                  src={bannerImage}
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              ) : (
-                <img
-                  src={bannerImage}
-                  alt={bannerTitle}
-                  className="absolute inset-0 w-full h-full object-cover"
-                />
-              )
-            )}
+          {/* FEATURED BANNER (ONLY IF ENABLED) */}
+          {isFeaturedEnabled && (
+            <div
+              className="relative w-full overflow-hidden rounded-2xl border border-[#69422e]"
+              style={{ aspectRatio: '2.05 / 1' }}
+            >
+              {bannerImage && (
+                isVideoFile(bannerImage) ? (
+                  <video
+                    src={bannerImage}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={bannerImage}
+                    alt={bannerTitle}
+                    className="absolute inset-0 w-full h-full object-cover"
+                  />
+                )
+              )}
 
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/55 to-transparent" />
 
-            <div className="absolute bottom-0 left-0 right-0 p-3">
-              <span className="inline-block rounded-md bg-[#ff741c] px-2 py-0.5 text-[9px] font-black tracking-wide">
-                🔥 TRENDING & FEATURED
-              </span>
+              <div className="absolute bottom-0 left-0 right-0 p-3">
+                <span className="inline-block rounded-md bg-[#ff741c] px-2 py-0.5 text-[9px] font-black tracking-wide">
+                  🔥 TRENDING & FEATURED
+                </span>
 
-              <h2 className="text-sm font-black mt-1.5 text-white">
-                {bannerTitle}
-              </h2>
+                <h2 className="text-sm font-black mt-1.5 text-white">
+                  {bannerTitle}
+                </h2>
 
-              <p className="text-[11px] text-gray-200 mt-1 line-clamp-1">
-                {bannerDescription}
-              </p>
+                <p className="text-[11px] text-gray-200 mt-1 line-clamp-1">
+                  {bannerDescription}
+                </p>
 
-              <button
-                onClick={onPlayFeatured}
-                className="mt-2 rounded-xl bg-[#ff741c] px-3.5 py-1.5 text-xs font-bold cursor-pointer"
-              >
-                ✨ Play Now
-              </button>
+                <button
+                  onClick={onPlayFeatured}
+                  className="mt-2 rounded-xl bg-[#ff741c] px-3.5 py-1.5 text-xs font-bold cursor-pointer"
+                >
+                  ✨ Play Now
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* FREE COINS */}
           <div className="rounded-2xl border border-[#302b39] bg-[#17141d] p-3 flex items-center justify-between gap-2 shadow-md">
@@ -271,4 +277,3 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-    
