@@ -50,9 +50,11 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   const [isPromoEnabled, setIsPromoEnabled] = useState(true);
   const [isFeaturedEnabled, setIsFeaturedEnabled] = useState(true);
 
-  // Ad Watch Counter & Limit States (Max 5 ads per day)
+  // Ad States
   const [adsWatched, setAdsWatched] = useState(0);
   const [adMessage, setAdMessage] = useState('');
+  const [showAdModal, setShowAdModal] = useState(false);
+  const [adTimer, setAdTimer] = useState(5); // 5 seconds ad simulation
 
   const todayKey = new Date().toDateString();
 
@@ -68,7 +70,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       const watchedCount = parseInt(localStorage.getItem('storyvoid_ads_watched_count') || '0', 10);
 
       if (lastClaimDate !== todayKey) {
-        // Naya din shuru, reset counter
         localStorage.setItem('storyvoid_ad_claim_date', todayKey);
         localStorage.setItem('storyvoid_ads_watched_count', '0');
         setAdsWatched(0);
@@ -83,6 +84,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     }
   }, [todayKey]);
 
+  // Ad Popup Trigger
   const handleWatchAdClick = () => {
     let currentWatched = parseInt(localStorage.getItem('storyvoid_ads_watched_count') || '0', 10);
     
@@ -91,26 +93,41 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       return;
     }
 
-    currentWatched += 1;
-    localStorage.setItem('storyvoid_ads_watched_count', String(currentWatched));
-    setAdsWatched(currentWatched);
-
-    // Har ad dekhne par turant +6 coins milenge (Total 5 ads x 6 = 30 coins)
-    const coinsReward = 6;
-    if (onAddCoins) {
-      onAddCoins(coinsReward);
-    } else {
-      const currentCoins = parseInt(localStorage.getItem('storyvoid_user_coins') || '5', 10);
-      localStorage.setItem('storyvoid_user_coins', String(currentCoins + coinsReward));
-      window.dispatchEvent(new Event('storage'));
-    }
-
-    if (currentWatched < 5) {
-      setAdMessage(`🎉 Ad watched! (+6 coins added). ${5 - currentWatched} ads left for today.`);
-    } else {
-      setAdMessage('🔥 Daily quota completed! You watched all 5 ads and earned 30 coins today.');
-    }
+    setShowAdModal(true);
+    setAdTimer(5); // Reset timer to 5s
   };
+
+  // Timer Effect for Ad Simulation
+  useEffect(() => {
+    let interval: any;
+    if (showAdModal && adTimer > 0) {
+      interval = setInterval(() => {
+        setAdTimer((prev) => prev - 1);
+      }, 1000);
+    } else if (showAdModal && adTimer === 0) {
+      // Ad finished! Reward user
+      setShowAdModal(false);
+      let currentWatched = parseInt(localStorage.getItem('storyvoid_ads_watched_count') || '0', 10) + 1;
+      localStorage.setItem('storyvoid_ads_watched_count', String(currentWatched));
+      setAdsWatched(currentWatched);
+
+      const coinsReward = 6;
+      if (onAddCoins) {
+        onAddCoins(coinsReward);
+      } else {
+        const currentCoins = parseInt(localStorage.getItem('storyvoid_user_coins') || '5', 10);
+        localStorage.setItem('storyvoid_user_coins', String(currentCoins + coinsReward));
+        window.dispatchEvent(new Event('storage'));
+      }
+
+      if (currentWatched < 5) {
+        setAdMessage(`🎉 Ad watched successfully! (+6 coins added). ${5 - currentWatched} ads left today.`);
+      } else {
+        setAdMessage('🔥 Daily quota completed! You watched all 5 ads and earned 30 coins today.');
+      }
+    }
+    return () => clearInterval(interval);
+  }, [showAdModal, adTimer]);
 
   const isVideoFile = (url: string) => {
     if (!url) return false;
@@ -119,7 +136,40 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   };
 
   return (
-    <div className="space-y-4 pb-20">
+    <div className="space-y-4 pb-20 relative">
+
+      {/* REWARDED AD POPUP MODAL (TESTING MODE) */}
+      {showAdModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-4 backdrop-blur-md">
+          <div className="bg-[#1b1723] border border-orange-500/50 rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-scaleIn">
+            <span className="bg-orange-500/20 text-orange-400 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
+              📺 Sponsored Ad Playing...
+            </span>
+
+            <div className="w-full h-36 bg-black rounded-xl border border-gray-800 flex flex-col items-center justify-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-tr from-orange-600/20 to-purple-600/20 animate-pulse" />
+              <p className="text-white font-bold text-sm z-10">StoryVoid Partner Ad</p>
+              <p className="text-gray-400 text-[10px] z-10 mt-1">Watch till the end to claim +6 coins!</p>
+            </div>
+
+            <div className="space-y-1">
+              <p className="text-xs text-gray-300">
+                Ad ending in <span className="text-orange-400 font-bold text-sm">{adTimer}s</span>
+              </p>
+              <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-orange-500 h-full transition-all duration-1000"
+                  style={{ width: `${(adTimer / 5) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            <p className="text-[10px] text-gray-500 italic">
+              Please do not close this window while the ad is playing.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* GENRES */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -243,7 +293,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
             </div>
           )}
 
-          {/* EARN FREE COINS (INSTANT COIN PER AD WITH 5 ADS DAILY LIMIT) */}
+          {/* EARN FREE COINS CARD */}
           <div className="rounded-2xl border border-[#302b39] bg-[#17141d] p-3 space-y-2 shadow-md">
             <div className="flex items-center justify-between gap-2">
               <div>
@@ -251,7 +301,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                   🟡 EARN FREE COINS ({adsWatched}/5 Ads Watched)
                 </h3>
                 <p className="text-[10px] text-gray-300 mt-0.5">
-                  Watch an ad to get instant +6 coins! (Max 30/day)
+                  Watch a 5s ad to get instant +6 coins! (Max 30/day)
                 </p>
               </div>
 
@@ -340,4 +390,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-                    
+      
