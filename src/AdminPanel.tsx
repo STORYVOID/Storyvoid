@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { AddEpisodeTab } from './components/admin/AddEpisodeTab';
 import { NewStoryTab } from './components/admin/NewStoryTab';
-import { AdminUsersTab } from './AdminUsersTab';
-import { AdminManageTab } from './AdminManageTab';
+import { AdminUsersTab } from './components/AdminUsersTab';
+import { AdminManageTab } from './components/AdminManageTab';
 
 interface AdminPanelProps {
   stories: any[];
@@ -338,4 +338,4 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     </div>
   );
 };
-            
+        
