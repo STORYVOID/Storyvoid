@@ -44,7 +44,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   isPlaying,
   userEmail = 'guest',
 }) => {
-  // Promo banner state from localStorage
   const [promoTitle, setPromoTitle] = useState('');
   const [promoMediaUrl, setPromoMediaUrl] = useState('');
   const [promoLink, setPromoLink] = useState('');
@@ -59,7 +58,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     }
   }, []);
 
-  // Helper to check if URL is a video
   const isVideoFile = (url: string) => {
     if (!url) return false;
     const lower = url.toLowerCase();
@@ -205,7 +203,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
               className="shrink-0 rounded-xl bg-[#f4bd00] px-3.5 py-1.5 text-xs font-black text-black cursor-pointer hover:bg-yellow-400 transition-all"
             >
               Watch Ad
-            </Link> {/* Wait, button tag closed correctly */}
+            </button>
           </div>
 
           {/* STORY COLLECTION */}
@@ -273,4 +271,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-      
+    
