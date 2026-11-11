@@ -8,6 +8,7 @@ interface EpisodeListProps {
   onBackToStories?: () => void;
   currentPlayingEpisode?: any;
   isPlaying?: boolean;
+  userEmail?: string;
 }
 
 export const EpisodeList: React.FC<EpisodeListProps> = ({
@@ -18,23 +19,25 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
   onBackToStories,
   currentPlayingEpisode,
   isPlaying,
+  userEmail = 'guest',
 }) => {
   const [isFollowed, setIsFollowed] = useState<boolean>(false);
   const storyTitle = selectedStory?.title || 'Story';
+  const followKey = `storyvoid_followed_series_${userEmail.toLowerCase()}`;
 
   useEffect(() => {
     try {
-      const savedFollows = localStorage.getItem('storyvoid_followed_series');
+      const savedFollows = localStorage.getItem(followKey);
       const followedTitles: string[] = savedFollows ? JSON.parse(savedFollows) : [];
       setIsFollowed(followedTitles.includes(storyTitle));
     } catch (err) {
       console.error('Error checking follow status:', err);
     }
-  }, [storyTitle]);
+  }, [storyTitle, userEmail]);
 
   const toggleFollow = () => {
     try {
-      const savedFollows = localStorage.getItem('storyvoid_followed_series');
+      const savedFollows = localStorage.getItem(followKey);
       let followedTitles: string[] = savedFollows ? JSON.parse(savedFollows) : [];
 
       if (isFollowed) {
@@ -44,7 +47,7 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
         followedTitles.push(storyTitle);
         setIsFollowed(true);
       }
-      localStorage.setItem('storyvoid_followed_series', JSON.stringify(followedTitles));
+      localStorage.setItem(followKey, JSON.stringify(followedTitles));
     } catch (err) {
       console.error('Error toggling follow:', err);
     }
@@ -150,3 +153,4 @@ export const EpisodeList: React.FC<EpisodeListProps> = ({
     </div>
   );
 };
+    
