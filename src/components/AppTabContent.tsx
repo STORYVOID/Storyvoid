@@ -1,23 +1,23 @@
-
 import React from 'react';
-import { AdminPanel } from '../AdminPanel';
 import { HomeTab } from './HomeTab';
-import { SearchView } from './SearchView';
+import { SearchTab } from './SearchTab';
 import { LibraryView } from './LibraryView';
-import { ProfileView } from './ProfileView';
+import { ProfileTab } from './ProfileTab';
+import { AdminTab } from './AdminTab';
 
 interface AppTabContentProps {
-  activeTab: string;
+  activeTab: 'home' | 'search' | 'library' | 'profile' | 'admin';
   isAdmin: boolean;
-  homeProps: React.ComponentProps<typeof HomeTab>;
+  homeProps: any;
   stories: any[];
-  onEpisodeClick: (episode: any) => void;
+  series?: any[];
+  onEpisodeClick: (ep: any, playlist: any[]) => void;
   userEmail: string;
   coins: number;
   onLogout: () => void;
   onOpenCoinStore: () => void;
   fetchStories: () => void;
-  showSuccessMessage: (message: string) => void;
+  showSuccessMessage: (msg: string) => void;
 }
 
 export const AppTabContent: React.FC<AppTabContentProps> = ({
@@ -25,6 +25,7 @@ export const AppTabContent: React.FC<AppTabContentProps> = ({
   isAdmin,
   homeProps,
   stories,
+  series = [],
   onEpisodeClick,
   userEmail,
   coins,
@@ -33,38 +34,44 @@ export const AppTabContent: React.FC<AppTabContentProps> = ({
   fetchStories,
   showSuccessMessage,
 }) => {
-  return (
-    <>
-      {activeTab === 'home' && <HomeTab {...homeProps} />}
-
-      {activeTab === 'search' && (
-        <SearchView
-          stories={stories}
+  switch (activeTab) {
+    case 'home':
+      return <HomeTab {...homeProps} />;
+    
+    case 'search':
+      return <SearchTab stories={stories} onEpisodeClick={onEpisodeClick} />;
+    
+    case 'library':
+      return (
+        <LibraryView 
+          series={series} 
+          onSelectStory={(title) => homeProps.onSelectStory(title)}
           onEpisodeClick={onEpisodeClick}
-        />
-      )}
-
-      {activeTab === 'library' && (
-        <LibraryView onEpisodeClick={onEpisodeClick} />
-      )}
-
-      {activeTab === 'profile' && (
-        <ProfileView
           userEmail={userEmail}
-          coins={coins}
-          onLogout={onLogout}
-          onOpenCoinStore={onOpenCoinStore}
         />
-      )}
-
-      {activeTab === 'admin' && isAdmin && (
-        <AdminPanel
-          stories={stories}
-          fetchStories={fetchStories}
-          setSuccessMessage={showSuccessMessage}
+      );
+    
+    case 'profile':
+      return (
+        <ProfileTab 
+          userEmail={userEmail} 
+          coins={coins} 
+          onLogout={onLogout} 
+          onOpenCoinStore={onOpenCoinStore} 
         />
-      )}
-    </>
-  );
+      );
+    
+    case 'admin':
+      return isAdmin ? (
+        <AdminTab 
+          fetchStories={fetchStories} 
+          showSuccessMessage={showSuccessMessage} 
+        />
+      ) : (
+        <div className="text-center py-12 text-gray-400 text-xs">Access Denied</div>
+      );
+      
+    default:
+      return <HomeTab {...homeProps} />;
+  }
 };
-  
