@@ -7,6 +7,9 @@ interface ProfileViewProps {
   onOpenCoinStore: () => void;
   onWatchAd: () => void;
   coins: number;
+  adsWatched?: number;
+  adMessage?: string;
+  isClaimingReward?: boolean;
 }
 
 export const ProfileView: React.FC<ProfileViewProps> = ({
@@ -16,6 +19,9 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
   onOpenCoinStore,
   onWatchAd,
   coins,
+  adsWatched = 0,
+  adMessage = '',
+  isClaimingReward = false,
 }) => {
   return (
     <div className="p-4 space-y-4 max-w-xl mx-auto pb-20">
@@ -50,23 +56,52 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </div>
 
-      {/* Action Buttons: Buy Coins & Watch Ad */}
-      <div className="grid grid-cols-2 gap-3 pt-2">
+      {/* Buy Coins Button */}
+      <div>
         <button 
           onClick={onOpenCoinStore}
-          className="bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white p-4 rounded-2xl font-bold text-xs shadow-lg transition-all cursor-pointer flex flex-col items-center justify-center space-y-1.5 border border-orange-400/30"
+          className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white p-4 rounded-2xl font-bold text-xs shadow-lg transition-all cursor-pointer flex items-center justify-center space-x-2 border border-orange-400/30"
         >
           <span className="text-xl">💳</span>
           <span>Buy Coins (UPI / GPay)</span>
         </button>
+      </div>
 
-        <button 
-          onClick={onWatchAd}
-          className="bg-[#16131c] hover:bg-gray-800 text-yellow-400 border border-yellow-500/40 p-4 rounded-2xl font-bold text-xs shadow-lg transition-all cursor-pointer flex flex-col items-center justify-center space-y-1.5"
-        >
-          <span className="text-xl">📺</span>
-          <span>Watch Ad (+20 Coins)</span>
-        </button>
+      {/* EARN FREE COINS CARD (Exact Home Style & Sync) */}
+      <div className="rounded-2xl border border-[#302b39] bg-[#17141d] p-3 space-y-2 shadow-md">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h3 className="font-bold text-[#ffd329] text-xs flex items-center gap-1">
+              🟡 EARN FREE COINS ({adsWatched}/5 Ads Watched)
+            </h3>
+
+            <p className="text-[10px] text-gray-300 mt-0.5">
+              Watch rewarded ad to get instant +6 coins! (Max 30/day)
+            </p>
+          </div>
+
+          <button
+            onClick={onWatchAd}
+            disabled={adsWatched >= 5 || isClaimingReward}
+            className={`shrink-0 rounded-xl px-3.5 py-1.5 text-xs font-black transition-all ${
+              adsWatched >= 5 || isClaimingReward
+                ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                : 'bg-[#f4bd00] text-black cursor-pointer hover:bg-yellow-400'
+            }`}
+          >
+            {isClaimingReward
+              ? 'Loading Ad...'
+              : adsWatched >= 5
+                ? 'Limit Reached'
+                : 'Watch Ad'}
+          </button>
+        </div>
+
+        {adMessage && (
+          <p className="text-[10px] text-orange-400 font-semibold bg-[#121017] p-1.5 rounded-lg text-center">
+            {adMessage}
+          </p>
+        )}
       </div>
 
       {/* Welcome Note Card */}
@@ -77,3 +112,4 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
     </div>
   );
 };
+              
