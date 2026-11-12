@@ -372,9 +372,6 @@ export default function App() {
     currentPlayingEpisode,
     isPlaying,
     userEmail,
-
-    // 👇 Yeh raha naya function jo coin click hote hi Profile tab khol dega
-    onOpenProfile: () => setActiveTab('profile'),
   };
 
   return (
@@ -383,6 +380,7 @@ export default function App() {
       <AppHeader
         coins={coins}
         onOpenCoinStore={() => setIsCoinStoreOpen(true)}
+        onOpenProfile={() => setActiveTab('profile')}
       />
 
       <audio
@@ -453,4 +451,4 @@ export default function App() {
     </div>
   );
         }
-                        
+    
