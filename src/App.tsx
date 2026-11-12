@@ -23,6 +23,12 @@ export default function App() {
   const [selectedStoryTitle, setSelectedStoryTitle] = useState('');
   const [selectedGenreFilter, setSelectedGenreFilter] = useState('All');
 
+  // SHARED AD STATES FOR HOME & PROFILE SYNC
+  const [adsWatched, setAdsWatched] = useState(0);
+  const [adMessage, setAdMessage] = useState('');
+  const [isClaimingReward, setIsClaimingReward] = useState(false);
+  const claimLockRef = useRef(false);
+
   const [modalConfig, setModalConfig] = useState({
     isOpen: false,
     title: '',
@@ -48,6 +54,34 @@ export default function App() {
   const showMessage = (title: string, message: string, isSuccess = false) => {
     setModalConfig({ isOpen: true, title, message, isSuccess });
   };
+
+  const todayKey = new Date().toDateString();
+  const userAdKey = `storyvoid_ads_${userEmail || 'guest'}`;
+  const userDateKey = `storyvoid_date_${userEmail || 'guest'}`;
+
+  // LOAD DAILY AD COUNT ON AUTH/START
+  useEffect(() => {
+    try {
+      const lastClaimDate = localStorage.getItem(userDateKey);
+      const watchedCount = parseInt(localStorage.getItem(userAdKey) || '0', 10);
+
+      if (lastClaimDate !== todayKey) {
+        localStorage.setItem(userDateKey, todayKey);
+        localStorage.setItem(userAdKey, '0');
+        setAdsWatched(0);
+        setAdMessage('');
+      } else {
+        setAdsWatched(watchedCount);
+        if (watchedCount >= 5) {
+          setAdMessage('✨ Daily limit reached! (5/5 ads watched). Come back tomorrow.');
+        } else if (watchedCount > 0) {
+          setAdMessage(`📺 You have watched ${watchedCount}/5 ads today.`);
+        }
+      }
+    } catch (err) {
+      console.error('Error loading ad state:', err);
+    }
+  }, [userEmail, todayKey, userAdKey, userDateKey]);
 
   // FETCH USER WALLET AND UNLOCKED EPISODES
   const fetchUserWallet = async (userId: string) => {
@@ -89,7 +123,7 @@ export default function App() {
     await fetchUserWallet(user.id);
   };
 
-  // SUPABASE AD REWARD FUNCTION
+  // SUPABASE AD REWARD FUNCTION & SHARED HANDLER
   const handleAdReward = async (amount: number): Promise<boolean> => {
     if (!isLoggedIn) {
       showMessage('Login Required', 'Please login to earn coins.');
@@ -112,20 +146,77 @@ export default function App() {
         throw new Error('Reward could not be confirmed.');
       }
 
-      // UPDATE ACTUAL SUPABASE WALLET BALANCE
       setCoins(Number(result.balance));
-
       return true;
 
     } catch (err: any) {
       console.error('Ad reward error:', err);
-
-      showMessage(
-        'Reward Failed',
-        err.message || 'Coins could not be added.'
-      );
-
+      showMessage('Reward Failed', err.message || 'Coins could not be added.');
       return false;
+    }
+  };
+
+  // UNIFIED WATCH AD TRIGGER (USED BY BOTH HOME AND PROFILE)
+  const handleWatchAdClick = async () => {
+    if (isClaimingReward || claimLockRef.current) return;
+
+    const currentWatched = parseInt(localStorage.getItem(userAdKey) || '0', 10);
+    const lastClaimDate = localStorage.getItem(userDateKey);
+
+    if (lastClaimDate !== todayKey) {
+      localStorage.setItem(userDateKey, todayKey);
+      localStorage.setItem(userAdKey, '0');
+      setAdsWatched(0);
+    }
+
+    if (currentWatched >= 5 && lastClaimDate === todayKey) {
+      showMessage('Limit Reached', 'Aap aaj ki daily limit (5 ads) poori kar chuke hain!');
+      return;
+    }
+
+    try {
+      setIsClaimingReward(true);
+      claimLockRef.current = true;
+      setAdMessage('Loading rewarded ad...');
+
+      const { AdMobService } = await import('./services/adMobService');
+      await AdMobService.initialize();
+      await AdMobService.showRewardedAd(async () => {
+        const success = await handleAdReward(6);
+
+        if (!success) {
+          setAdMessage('❌ Coins could not be added. Please try again.');
+          return;
+        }
+
+        let updatedWatched = 0;
+        const freshClaimDate = localStorage.getItem(userDateKey);
+
+        if (freshClaimDate === todayKey) {
+          updatedWatched = parseInt(localStorage.getItem(userAdKey) || '0', 10);
+        }
+
+        updatedWatched += 1;
+        localStorage.setItem(userAdKey, String(updatedWatched));
+        localStorage.setItem(userDateKey, todayKey);
+
+        setAdsWatched(updatedWatched);
+
+        if (updatedWatched < 5) {
+          setAdMessage(`🎉 Reward claimed! (+6 coins added). ${5 - updatedWatched} left today.`);
+          showMessage('Reward Claimed!', `+6 coins added! (${updatedWatched}/5 ads watched today)`, true);
+        } else {
+          setAdMessage('🔥 Daily quota completed! You earned 30 coins today.');
+          showMessage('Limit Reached', 'Daily quota completed! You earned 30 coins today.', true);
+        }
+      });
+    } catch (error: any) {
+      console.error('Reward claim failed:', error);
+      setAdMessage('⚠️ Failed to claim reward.');
+      showMessage('Error', 'Failed to load ad. Please try again.');
+    } finally {
+      setIsClaimingReward(false);
+      claimLockRef.current = false;
     }
   };
 
@@ -353,44 +444,7 @@ export default function App() {
       if (series[0]) setSelectedStoryTitle(series[0].title);
     },
 
-    onWatchAd: async () => {
-      // Shared ad watch logic with localStorage sync for the 5-ad daily limit
-      const todayKey = new Date().toDateString();
-      const userAdKey = `storyvoid_ads_${userEmail || 'guest'}`;
-      const userDateKey = `storyvoid_date_${userEmail || 'guest'}`;
-
-      const lastClaimDate = localStorage.getItem(userDateKey);
-      let watchedCount = parseInt(localStorage.getItem(userAdKey) || '0', 10);
-
-      if (lastClaimDate !== todayKey) {
-        localStorage.setItem(userDateKey, todayKey);
-        localStorage.setItem(userAdKey, '0');
-        watchedCount = 0;
-      }
-
-      if (watchedCount >= 5) {
-        showMessage('Limit Reached', 'Aap aaj ki daily limit (5 ads) poori kar chuke hain!', false);
-        return;
-      }
-
-      try {
-        const { AdMobService } = await import('./services/adMobService');
-        await AdMobService.initialize();
-        await AdMobService.showRewardedAd(async () => {
-          const success = await handleAdReward(6);
-          if (success) {
-            const newCount = watchedCount + 1;
-            localStorage.setItem(userAdKey, String(newCount));
-            localStorage.setItem(userDateKey, todayKey);
-            showMessage('Reward Claimed!', `+6 coins added! (${newCount}/5 ads watched today)`, true);
-          }
-        });
-      } catch (err: any) {
-        console.error('Profile ad error:', err);
-        showMessage('Error', 'Could not load ad. Please try again.');
-      }
-    },
-
+    onWatchAd: handleWatchAdClick,
     onAddCoins: handleAdReward,
 
     filteredStories: selectedGenreFilter === 'All'
@@ -400,11 +454,8 @@ export default function App() {
         ),
 
     loadingStories,
-
     onRefresh: fetchStories,
-
     onSelectStory: (title: string) => setSelectedStoryTitle(title),
-
     currentPlayingEpisode,
     isPlaying,
     userEmail,
@@ -446,7 +497,10 @@ export default function App() {
           onOpenCoinStore={() => setIsCoinStoreOpen(true)}
           fetchStories={fetchStories}
           showSuccessMessage={(msg: string) => showMessage('Success', msg, true)}
-          onWatchAd={homeProps.onWatchAd}
+          onWatchAd={handleWatchAdClick}
+          adsWatched={adsWatched}
+          adMessage={adMessage}
+          isClaimingReward={isClaimingReward}
         />
       </main>
 
@@ -487,4 +541,4 @@ export default function App() {
 
     </div>
   );
-  }
+}
