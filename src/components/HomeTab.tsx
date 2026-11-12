@@ -1,4 +1,4 @@
-Import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { EpisodeList } from './EpisodeList';
 import { AdMobService } from '../services/adMobService';
 
@@ -440,4 +440,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-  
+        
