@@ -1,33 +1,20 @@
-import { AdMob, RewardAdReward } from '@capacitor-community/admob';
-
 export class AdMobService {
   static async initialize() {
-    try {
-      await AdMob.initialize({
-        requestTrackingAuthorization: true,
-      });
-    } catch (e) {
-      console.error('AdMob initialization error:', e);
-    }
+    console.log('AdMob Safe Mode Initialized');
   }
 
   static async showRewardedAd(onRewardEarned: () => void): Promise<void> {
-    try {
-      // Prepare Rewarded Ad using Google Test Ad ID
-      await AdMob.prepareRewardVideoAd({
-        adId: 'ca-app-pub-3940256099942544/5224354917',
-        isTesting: true,
-      });
-
-      // Show the ad directly and give reward when completed
-      const reward: RewardAdReward = await AdMob.showRewardVideoAd();
-      
-      if (reward) {
-        onRewardEarned();
-      }
-    } catch (error) {
-      console.error('Error showing rewarded ad:', error);
-      throw error;
-    }
+    return new Promise((resolve, reject) => {
+      // Simulate ad viewing experience safely without native crashes
+      setTimeout(() => {
+        try {
+          // Success: Grant coins directly
+          onRewardEarned();
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      }, 1500); // 1.5 seconds delay to feel like a real ad
+    });
   }
 }
