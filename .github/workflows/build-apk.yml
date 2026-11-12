@@ -30,7 +30,9 @@ jobs:
         run: npm run build
 
       - name: Generate Fresh Android Project
-        run: npx cap add android
+        run: |
+          rm -rf android
+          npx cap add android
 
       - name: Configure AdMob App ID
         run: |
@@ -49,7 +51,10 @@ jobs:
           if app is None:
               raise Exception("Android application tag missing")
 
-          meta = app.find("meta-data[@android:name='com.google.android.gms.ads.APPLICATION_ID']", {"android": android})
+          meta = app.find(
+              "meta-data[@android:name='com.google.android.gms.ads.APPLICATION_ID']",
+              {"android": android}
+          )
 
           if meta is None:
               meta = ET.SubElement(app, "meta-data")
