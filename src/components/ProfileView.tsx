@@ -65,7 +65,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
           className="bg-[#16131c] hover:bg-gray-800 text-yellow-400 border border-yellow-500/40 p-4 rounded-2xl font-bold text-xs shadow-lg transition-all cursor-pointer flex flex-col items-center justify-center space-y-1.5"
         >
           <span className="text-xl">📺</span>
-          <span>Watch Ad (+6 Coins)</span>
+          <span>Watch Ad (+20 Coins)</span>
         </button>
       </div>
 
