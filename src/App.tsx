@@ -353,7 +353,43 @@ export default function App() {
       if (series[0]) setSelectedStoryTitle(series[0].title);
     },
 
-    onWatchAd: () => showMessage('Coming Soon', 'Ads not connected yet.'),
+    onWatchAd: async () => {
+      // Shared ad watch logic with localStorage sync for the 5-ad daily limit
+      const todayKey = new Date().toDateString();
+      const userAdKey = `storyvoid_ads_${userEmail || 'guest'}`;
+      const userDateKey = `storyvoid_date_${userEmail || 'guest'}`;
+
+      const lastClaimDate = localStorage.getItem(userDateKey);
+      let watchedCount = parseInt(localStorage.getItem(userAdKey) || '0', 10);
+
+      if (lastClaimDate !== todayKey) {
+        localStorage.setItem(userDateKey, todayKey);
+        localStorage.setItem(userAdKey, '0');
+        watchedCount = 0;
+      }
+
+      if (watchedCount >= 5) {
+        showMessage('Limit Reached', 'Aap aaj ki daily limit (5 ads) poori kar chuke hain!', false);
+        return;
+      }
+
+      try {
+        const { AdMobService } = await import('./services/adMobService');
+        await AdMobService.initialize();
+        await AdMobService.showRewardedAd(async () => {
+          const success = await handleAdReward(6);
+          if (success) {
+            const newCount = watchedCount + 1;
+            localStorage.setItem(userAdKey, String(newCount));
+            localStorage.setItem(userDateKey, todayKey);
+            showMessage('Reward Claimed!', `+6 coins added! (${newCount}/5 ads watched today)`, true);
+          }
+        });
+      } catch (err: any) {
+        console.error('Profile ad error:', err);
+        showMessage('Error', 'Could not load ad. Please try again.');
+      }
+    },
 
     onAddCoins: handleAdReward,
 
@@ -410,6 +446,7 @@ export default function App() {
           onOpenCoinStore={() => setIsCoinStoreOpen(true)}
           fetchStories={fetchStories}
           showSuccessMessage={(msg: string) => showMessage('Success', msg, true)}
+          onWatchAd={homeProps.onWatchAd}
         />
       </main>
 
@@ -450,5 +487,4 @@ export default function App() {
 
     </div>
   );
-        }
-    
+  }
