@@ -27,9 +27,8 @@ jobs:
           npm install @capacitor-community/admob
           npm run build
           
-      - name: Add Android & Build
+      - name: Sync Android & Build
         run: |
-          npx cap add android
           npx cap sync android
           cd android
           chmod +x gradlew
