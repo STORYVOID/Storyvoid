@@ -1,0 +1,6 @@
+{
+  "appId": "com.storyvoid.app",
+  "appName": "StoryVoid",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
