@@ -27,8 +27,9 @@ jobs:
           npm install @capacitor-community/admob
           npm run build
           
-      - name: Sync Android Platform
+      - name: Generate Fresh Android Project
         run: |
+          npx cap add android
           npx cap sync android
           
       - name: Build Debug APK
