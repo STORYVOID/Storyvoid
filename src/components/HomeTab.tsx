@@ -106,7 +106,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     }
   }, [todayKey, userEmail, userAdKey, userDateKey]);
 
-  // WATCH REAL ADMOB REWARDED AD BUTTON
+  // WATCH REWARDED AD BUTTON
   const handleWatchAdClick = async () => {
     if (isClaimingReward || claimLockRef.current) return;
 
@@ -132,7 +132,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       claimLockRef.current = true;
       setAdMessage('Loading rewarded ad...');
 
-      // INITIALIZE AND SHOW REWARDED AD
       await AdMobService.initialize();
       await AdMobService.showRewardedAd(async () => {
         if (!onAddCoins) {
@@ -164,7 +163,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
         if (updatedWatched < 5) {
           setAdMessage(
-            `🎉 Ad watched successfully! (+6 coins added). ${5 - updatedWatched} ads left today.`
+            `🎉 Reward claimed! (+6 coins added). ${5 - updatedWatched} left today.`
           );
         } else {
           setAdMessage(
@@ -173,8 +172,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
         }
       });
     } catch (error: any) {
-      console.error('Ad playback or reward claim failed:', error);
-      setAdMessage('⚠️ Ad failed to load or was skipped. No coins awarded.');
+      console.error('Reward claim failed:', error);
+      setAdMessage('⚠️ Failed to claim reward.');
     } finally {
       setIsClaimingReward(false);
       claimLockRef.current = false;
@@ -430,3 +429,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
+  
