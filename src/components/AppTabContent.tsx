@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { HomeTab } from './HomeTab';
 import { SearchView } from './SearchView';
@@ -19,6 +18,10 @@ interface AppTabContentProps {
   onOpenCoinStore: () => void;
   fetchStories: () => void;
   showSuccessMessage: (msg: string) => void;
+  onWatchAd?: () => void;
+  adsWatched?: number;
+  adMessage?: string;
+  isClaimingReward?: boolean;
 }
 
 export const AppTabContent: React.FC<AppTabContentProps> = ({
@@ -34,6 +37,10 @@ export const AppTabContent: React.FC<AppTabContentProps> = ({
   onOpenCoinStore,
   fetchStories,
   showSuccessMessage,
+  onWatchAd,
+  adsWatched,
+  adMessage,
+  isClaimingReward,
 }) => {
   switch (activeTab) {
     case 'home':
@@ -65,11 +72,10 @@ export const AppTabContent: React.FC<AppTabContentProps> = ({
           coins={coins}
           onLogout={onLogout}
           onOpenCoinStore={onOpenCoinStore}
-          onWatchAd={() =>
-            showSuccessMessage(
-              'Testing coins earn karne ke liye Home tab par Watch Ad option use karein.'
-            )
-          }
+          onWatchAd={onWatchAd || homeProps.onWatchAd}
+          adsWatched={adsWatched}
+          adMessage={adMessage}
+          isClaimingReward={isClaimingReward}
         />
       );
 
