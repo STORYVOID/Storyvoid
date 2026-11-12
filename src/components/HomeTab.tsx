@@ -1,6 +1,6 @@
-
-import React, { useState, useEffect, useRef } from 'react';
+Import React, { useState, useEffect, useRef } from 'react';
 import { EpisodeList } from './EpisodeList';
+import { AdMobService } from '../services/adMobService';
 
 interface HomeTabProps {
   genres: string[];
@@ -54,8 +54,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   // AD STATES
   const [adsWatched, setAdsWatched] = useState(0);
   const [adMessage, setAdMessage] = useState('');
-  const [showAdModal, setShowAdModal] = useState(false);
-  const [adTimer, setAdTimer] = useState(5);
   const [isClaimingReward, setIsClaimingReward] = useState(false);
 
   // Prevent duplicate reward calls
@@ -112,8 +110,8 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     }
   }, [todayKey, userEmail, userAdKey, userDateKey]);
 
-  // WATCH AD BUTTON
-  const handleWatchAdClick = () => {
+  // WATCH REAL ADMOB REWARDED AD BUTTON
+  const handleWatchAdClick = async () => {
     if (isClaimingReward || claimLockRef.current) return;
 
     const currentWatched = parseInt(
@@ -134,97 +132,62 @@ export const HomeTab: React.FC<HomeTabProps> = ({
       return;
     }
 
-    setAdMessage('');
-    setAdTimer(5);
-    setShowAdModal(true);
-  };
-
-  // AD TIMER AND SUPABASE REWARD
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval> | undefined;
-
-    if (showAdModal && adTimer > 0) {
-      interval = setInterval(() => {
-        setAdTimer((prev) => Math.max(0, prev - 1));
-      }, 1000);
-    }
-
-    if (showAdModal && adTimer === 0 && !claimLockRef.current) {
-      claimLockRef.current = true;
-
-      setShowAdModal(false);
+    try {
       setIsClaimingReward(true);
+      claimLockRef.current = true;
+      setAdMessage('Loading rewarded ad...');
 
-      const claimReward = async () => {
-        try {
-          if (!onAddCoins) {
-            throw new Error('Reward system is not connected.');
-          }
-
-          // Actual Supabase wallet reward
-          const success = await onAddCoins(6);
-
-          if (!success) {
-            setAdMessage(
-              '❌ Coins could not be added. Please try again.'
-            );
-            return;
-          }
-
-          // Count ad only after successful wallet update
-          const lastClaimDate = localStorage.getItem(userDateKey);
-
-          let currentWatched = 0;
-
-          if (lastClaimDate === todayKey) {
-            currentWatched = parseInt(
-              localStorage.getItem(userAdKey) || '0',
-              10
-            );
-          }
-
-          currentWatched += 1;
-
-          localStorage.setItem(userAdKey, String(currentWatched));
-          localStorage.setItem(userDateKey, todayKey);
-
-          setAdsWatched(currentWatched);
-
-          if (currentWatched < 5) {
-            setAdMessage(
-              `🎉 Ad watched successfully! (+6 coins added). ${5 - currentWatched} ads left today.`
-            );
-          } else {
-            setAdMessage(
-              '🔥 Daily quota completed! You earned 30 coins today.'
-            );
-          }
-        } catch (error: any) {
-          console.error('Reward claim failed:', error);
-
-          setAdMessage(
-            '❌ Reward failed. Please try again.'
-          );
-        } finally {
-          setIsClaimingReward(false);
-          claimLockRef.current = false;
+      // CALL REAL GOOGLE ADMOB REWARDED AD
+      await AdMobService.showRewardedAd(async () => {
+        // --- SUCCESS: User watched ad till end ---
+        if (!onAddCoins) {
+          throw new Error('Reward system is not connected.');
         }
-      };
 
-      void claimReward();
+        // Actual Supabase wallet reward (+6 coins)
+        const success = await onAddCoins(6);
+
+        if (!success) {
+          setAdMessage('❌ Coins could not be added. Please try again.');
+          return;
+        }
+
+        // Count ad only after successful wallet update
+        let updatedWatched = 0;
+        const freshClaimDate = localStorage.getItem(userDateKey);
+
+        if (freshClaimDate === todayKey) {
+          updatedWatched = parseInt(
+            localStorage.getItem(userAdKey) || '0',
+            10
+          );
+        }
+
+        updatedWatched += 1;
+
+        localStorage.setItem(userAdKey, String(updatedWatched));
+        localStorage.setItem(userDateKey, todayKey);
+
+        setAdsWatched(updatedWatched);
+
+        if (updatedWatched < 5) {
+          setAdMessage(
+            `🎉 Ad watched successfully! (+6 coins added). ${5 - updatedWatched} ads left today.`
+          );
+        } else {
+          setAdMessage(
+            '🔥 Daily quota completed! You earned 30 coins today.'
+          );
+        }
+      });
+    } catch (error: any) {
+      console.error('Ad playback or reward claim failed:', error);
+      setAdMessage('⚠️ Ad failed to load or was skipped. No coins awarded.');
+    } finally {
+      setIsClaimingReward(false);
+      claimLockRef.current = false;
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [
-    showAdModal,
-    adTimer,
-    userAdKey,
-    userDateKey,
-    todayKey,
-    onAddCoins,
-  ]);
+  };
 
   const isVideoFile = (url: string) => {
     if (!url) return false;
@@ -241,53 +204,6 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
   return (
     <div className="space-y-4 pb-20 relative">
-
-      {/* REWARDED AD POPUP MODAL */}
-      {showAdModal && (
-        <div className="fixed inset-0 z-50 bg-black/85 flex flex-col items-center justify-center p-4 backdrop-blur-md">
-          <div className="bg-[#1b1723] border border-orange-500/50 rounded-2xl p-6 max-w-sm w-full text-center space-y-4 shadow-2xl animate-scaleIn">
-
-            <span className="bg-orange-500/20 text-orange-400 text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider">
-              📺 Sponsored Ad Playing...
-            </span>
-
-            <div className="w-full h-36 bg-black rounded-xl border border-gray-800 flex flex-col items-center justify-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-tr from-orange-600/20 to-purple-600/20 animate-pulse" />
-
-              <p className="text-white font-bold text-sm z-10">
-                StoryVoid Partner Ad
-              </p>
-
-              <p className="text-gray-400 text-[10px] z-10 mt-1">
-                Watch till the end to claim +6 coins!
-              </p>
-            </div>
-
-            <div className="space-y-1">
-              <p className="text-xs text-gray-300">
-                Ad ending in{' '}
-                <span className="text-orange-400 font-bold text-sm">
-                  {adTimer}s
-                </span>
-              </p>
-
-              <div className="w-full bg-gray-800 h-1.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-orange-500 h-full transition-all duration-1000"
-                  style={{
-                    width: `${(adTimer / 5) * 100}%`
-                  }}
-                />
-              </div>
-            </div>
-
-            <p className="text-[10px] text-gray-500 italic">
-              Please do not close this window while the ad is playing.
-            </p>
-
-          </div>
-        </div>
-      )}
 
       {/* GENRES */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -431,7 +347,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 </h3>
 
                 <p className="text-[10px] text-gray-300 mt-0.5">
-                  Watch a 5s ad to get instant +6 coins! (Max 30/day)
+                  Watch rewarded ad to get instant +6 coins! (Max 30/day)
                 </p>
               </div>
 
@@ -445,7 +361,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
                 }`}
               >
                 {isClaimingReward
-                  ? 'Please Wait...'
+                  ? 'Loading Ad...'
                   : adsWatched >= 5
                     ? 'Limit Reached'
                     : 'Watch Ad'}
@@ -524,4 +440,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-          
+  
