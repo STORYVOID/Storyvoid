@@ -29,6 +29,7 @@ jobs:
           
       - name: Generate Fresh Android Project
         run: |
+          rm -rf android
           npx cap add android
           npx cap sync android
           
