@@ -3,11 +3,13 @@ import React from 'react';
 interface AppHeaderProps {
   coins: number;
   onOpenCoinStore: () => void;
+  onOpenProfile?: () => void; // Optional prop to open profile tab
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
   coins,
   onOpenCoinStore,
+  onOpenProfile,
 }) => {
   return (
     <header className="bg-[#100e15] border-b border-[#292431] px-3 py-2.5">
@@ -22,8 +24,9 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </div>
 
         <button
-          onClick={onOpenCoinStore}
-          className="flex items-center gap-1.5 bg-[#202938] border border-[#343d4c] rounded-full px-3 py-1.5 text-white cursor-pointer"
+          onClick={onOpenProfile ? onOpenProfile : onOpenCoinStore}
+          className="flex items-center gap-1.5 bg-[#202938] border border-[#343d4c] rounded-full px-3 py-1.5 text-white cursor-pointer hover:border-orange-500 transition-all"
+          title="Go to Profile & Coins"
         >
           <span className="text-sm">🟡</span>
           <span className="font-bold text-xs">{coins} Coins</span>
