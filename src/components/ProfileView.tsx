@@ -56,14 +56,19 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
         </div>
       </div>
 
-      {/* Buy Coins Button */}
+      {/* Buy Coins Button - Coming Soon */}
       <div>
         <button 
-          onClick={onOpenCoinStore}
-          className="w-full bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white p-4 rounded-2xl font-bold text-xs shadow-lg transition-all cursor-pointer flex items-center justify-center space-x-2 border border-orange-400/30"
+          disabled
+          className="w-full bg-[#16131c] text-gray-400 p-4 rounded-2xl font-bold text-xs shadow-md border border-gray-800 flex items-center justify-between cursor-not-allowed opacity-80"
         >
-          <span className="text-xl">💳</span>
-          <span>Buy Coins (UPI / GPay)</span>
+          <div className="flex items-center space-x-2">
+            <span className="text-xl">💳</span>
+            <span>Buy Coins (UPI / GPay)</span>
+          </div>
+          <span className="bg-orange-500/20 text-orange-400 text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider border border-orange-500/30">
+            Coming Soon 🚀
+          </span>
         </button>
       </div>
 
