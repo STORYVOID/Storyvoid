@@ -22,6 +22,8 @@ interface HomeTabProps {
   isPlaying?: boolean;
   userEmail?: string;
   onAddCoins?: (amount: number) => Promise<boolean>;
+  coinBalance?: number; // Optional prop to show coin balance if available
+  onOpenProfile?: () => void; // Function to navigate/open profile tab
 }
 
 export const HomeTab: React.FC<HomeTabProps> = ({
@@ -44,6 +46,7 @@ export const HomeTab: React.FC<HomeTabProps> = ({
   isPlaying,
   userEmail = 'guest',
   onAddCoins,
+  onOpenProfile,
 }) => {
   const [promoTitle, setPromoTitle] = useState('');
   const [promoMediaUrl, setPromoMediaUrl] = useState('');
@@ -193,6 +196,26 @@ export const HomeTab: React.FC<HomeTabProps> = ({
 
   return (
     <div className="space-y-4 pb-20 relative">
+
+      {/* TOP HEADER WITH CLICKABLE COIN WIDGET */}
+      <div className="flex justify-between items-center px-1 pt-1">
+        <div>
+          <h1 className="text-sm font-black tracking-wider text-orange-500 uppercase">STORYVOID</h1>
+          <p className="text-[10px] text-gray-400">SERIALIZED AUDIO</p>
+        </div>
+
+        {onOpenProfile && (
+          <button
+            onClick={onOpenProfile}
+            className="flex items-center gap-1.5 bg-[#1f1a29] border border-[#302b39] px-3 py-1.5 rounded-full cursor-pointer hover:border-orange-500 transition-all shadow-md"
+            title="Go to Profile & Coins"
+          >
+            <span className="text-yellow-400 text-xs">🟡</span>
+            <span className="text-xs font-bold text-white">Coins</span>
+            <span className="bg-[#ff741c] text-white w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ml-0.5">+</span>
+          </button>
+        )}
+      </div>
 
       {/* GENRES */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -429,4 +452,4 @@ export const HomeTab: React.FC<HomeTabProps> = ({
     </div>
   );
 };
-  
+    
