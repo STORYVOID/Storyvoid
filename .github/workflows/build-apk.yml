@@ -24,7 +24,6 @@ jobs:
       - name: Build Web
         run: |
           npm install
-          npm install @capacitor-community/admob
           npm run build
           
       - name: Generate Fresh Android Project
