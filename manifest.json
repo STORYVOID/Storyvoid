@@ -1,0 +1,15 @@
+{
+  "short_name": "StoryVoid",
+  "name": "StoryVoid - Serialized Audio",
+  "icons": [
+    {
+      "src": "/Logo.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#121017",
+  "theme_color": "#f4bd00",
+  "display": "standalone"
+}
